@@ -2,8 +2,21 @@
 
 ## Quick Reference for New Sessions
 
-> **Starting a new session?** Tell the AI:
-> *"I'm working on Rush2C9 hackathon project. Read the docs in `/docs` folder and let's continue from where we left off."*
+> **Starting a new session?** Copy and paste this to Claude:
+>
+> ```
+> I'm continuing work on Rush2C9 — a Cloud9 hackathon game project.
+>
+> Please read these docs to understand the project:
+> 1. /docs/PLANNING.md — Project overview, features, tech decisions
+> 2. /docs/PROGRESS.md — What's done, what's next
+> 3. /docs/GAME_MECHANICS.md — Game rules, scoring, vehicles
+> 4. /docs/GIT_STRATEGY.md — How we manage commits and tags
+>
+> The workspace folder is: /Users/ganesaprabunavamanirajan/Development/AI/Hackathon/JetBrains_Feb_2026_Game/Rush2C9
+>
+> Let's continue from where we left off. Check PROGRESS.md for current status.
+> ```
 
 ---
 
@@ -59,8 +72,12 @@
 - Game name: Rush2C9
 - Platform: Browser-based (React + Phaser.js)
 - Backend: Firebase
-- Auth: Name + Avatar (no password)
+- Auth: Name + Avatar (no password) — Avatar is SECRET, never shown publicly
 - Git strategy: Main branch + Tags for milestones
+- Starting cities: 10 (including Chennai 🇮🇳)
+- Destinations: LCS Arena & VCT Arena (both in LA)
+- Dual currency: Credits (per game) + Score (permanent)
+- Booth setup: QR code → Phone browser → Play anywhere
 
 **Next Session:**
 - Setup React + Vite project
@@ -119,6 +136,33 @@ Rush2C9/
 ├── LICENSE
 └── .gitignore
 ```
+
+---
+
+## Important Context (For New Sessions)
+
+### What is Cloud9?
+- Cloud9 is a professional **esports organization** (like IPL teams for cricket)
+- They own teams that compete in video game tournaments
+- Main games: League of Legends (LCS league) and VALORANT (VCT league)
+- Headquarters: Santa Monica, California
+- Website: https://cloud9.gg
+
+### What is this Hackathon?
+- **Name:** "Sky's the Limit" — Cloud9 x JetBrains Hackathon
+- **Category 4:** Event Game — Mini-game for fan booths at LCS/VCT events
+- **Prize:** Winner's game gets integrated into real Cloud9 booth!
+- **Deadline:** February 3, 2026 @ 11:00 AM PT
+
+### Our Game Concept
+Rush2C9 — Fans race from random cities worldwide to reach Cloud9's arenas (LCS or VCT). They choose routes and vehicles, balancing speed vs cost. Creates competition via leaderboard and head-to-head duels with score betting.
+
+### Key Design Decisions
+1. **Browser-based** — No app install, scan QR → play instantly
+2. **Avatar as PIN** — Fun, memorable, replaces password (NEVER shown publicly)
+3. **Dual currency** — Credits (per game) + Score (permanent leaderboard)
+4. **Faction war** — LCS vs VCT creates community rivalry
+5. **Touch-friendly** — Designed for phones at loud event booths
 
 ---
 

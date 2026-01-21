@@ -69,6 +69,27 @@ Rush2C9 is a browser-based mini-game designed for Cloud9 fan booths at LCS and V
 - Real-time updates via WebSocket
 - Shows top travelers and faction scores
 
+### 7. Booth Setup (QR Code Flow)
+- **Booth displays:** Large screen with leaderboard + QR code
+- **Fan scans QR:** Opens game URL in phone browser (no app install)
+- **Fan plays:** On their own phone, anywhere at the event
+- **Scores sync:** Real-time to booth's big screen
+- **Multiple fans:** Can play simultaneously (no queue!)
+
+### 8. Big Screen Display
+The booth's big screen shows:
+- Live leaderboard (top travelers)
+- Faction war progress (LCS vs VCT)
+- Live duels in progress
+- QR code for new players to join
+
+### 9. Avatar Privacy (IMPORTANT)
+- Avatar is like a SECRET PIN — used for login
+- Avatar is NEVER shown on public leaderboard
+- Leaderboard only shows: Name + Score
+- Fan sees their own avatar only on their phone
+- This prevents others from logging in as someone else
+
 ---
 
 ## Technical Decisions
