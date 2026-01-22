@@ -1,12 +1,26 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DESTINATIONS } from '../../data/gameData';
+import { getPlayer, logoutPlayer, deletePlayer } from '../../services/playerService';
 
 function HomeScreen() {
   const navigate = useNavigate();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // TODO: Get from context/localStorage
-  const playerName = 'Traveler';
-  const playerScore = 0;
+  // Get player data from localStorage
+  const player = getPlayer();
+  const playerName = player ? `${player.firstName} ${player.lastName}` : 'Traveler';
+  const playerScore = player ? player.score : 0;
+
+  const handleSwitchAccount = () => {
+    logoutPlayer();  // Just logout, keeps account data
+    navigate('/login');
+  };
+
+  const handleDeleteAccount = () => {
+    deletePlayer();  // Permanently delete account
+    navigate('/register');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-6">
@@ -78,6 +92,44 @@ function HomeScreen() {
               <div className="text-lg text-red-400">48%</div>
             </div>
           </div>
+        </div>
+
+        {/* Switch Account / Delete Account */}
+        <div className="mt-8 text-center space-y-2">
+          {!showDeleteConfirm ? (
+            <>
+              <button
+                onClick={handleSwitchAccount}
+                className="text-gray-500 text-sm hover:text-gray-400 block mx-auto"
+              >
+                Switch account
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-red-500/50 text-xs hover:text-red-400"
+              >
+                Delete account
+              </button>
+            </>
+          ) : (
+            <div className="bg-gray-800 rounded-lg p-4">
+              <p className="text-sm text-gray-400 mb-3">Delete your account? This cannot be undone.</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={handleDeleteAccount}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-sm"
+                >
+                  Yes, delete
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

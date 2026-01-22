@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AVATAR_CATEGORIES } from '../../data/gameData';
-import { createPlayer, playerExists } from '../../services/playerService';
+import { validatePlayer, playerExists } from '../../services/playerService';
 
-function RegistrationScreen() {
+function LoginScreen() {
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedAvatarIndex, setSelectedAvatarIndex] = useState(null);
   const [error, setError] = useState('');
+  const [attempts, setAttempts] = useState(0);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -21,30 +22,29 @@ function RegistrationScreen() {
     }
 
     if (selectedCategory === null || selectedAvatarIndex === null) {
-      setError('Please select an avatar');
+      setError('Please select your avatar');
       return;
     }
 
-    // Check if player with this name already exists
-    if (playerExists(firstName, lastName)) {
-      setError('This name is already registered. Please sign in instead.');
+    // Check if player exists first
+    if (!playerExists(firstName, lastName)) {
+      setError('No account found with this name. Please register first.');
       return;
     }
 
-    // Create player in localStorage
-    const player = createPlayer(firstName, lastName, selectedCategory, selectedAvatarIndex);
+    // Validate credentials (name + avatar)
+    const isValid = validatePlayer(firstName, lastName, selectedCategory, selectedAvatarIndex);
 
-    if (player) {
+    if (isValid) {
       navigate('/home');
     } else {
-      setError('Failed to save. Please try again.');
+      setAttempts(attempts + 1);
+      if (attempts >= 2) {
+        setError('Wrong avatar. Hint: Remember your secret avatar!');
+      } else {
+        setError('Wrong avatar. Please try again.');
+      }
     }
-  };
-
-  // Get the selected emoji for display
-  const getSelectedEmoji = () => {
-    if (selectedCategory === null || selectedAvatarIndex === null) return null;
-    return AVATAR_CATEGORIES[selectedCategory].icons[selectedAvatarIndex];
   };
 
   return (
@@ -52,8 +52,8 @@ function RegistrationScreen() {
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome, Traveler!</h1>
-          <p className="text-gray-400">Enter your name and pick a secret avatar</p>
+          <h1 className="text-3xl font-bold mb-2">Welcome Back!</h1>
+          <p className="text-gray-400">Enter your name and secret avatar to sign in</p>
         </div>
 
         {/* Error message */}
@@ -88,7 +88,7 @@ function RegistrationScreen() {
 
           {/* Avatar Categories */}
           <div>
-            <p className="text-sm text-gray-400 mb-3">Pick your secret avatar (like a PIN):</p>
+            <p className="text-sm text-gray-400 mb-3">Select your secret avatar:</p>
             <div className="flex gap-2 flex-wrap justify-center mb-4">
               {Object.entries(AVATAR_CATEGORIES).map(([key, cat]) => (
                 <button
@@ -128,14 +128,6 @@ function RegistrationScreen() {
                 ))}
               </div>
             )}
-
-            {/* Selected avatar preview */}
-            {getSelectedEmoji() && (
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-500">Your secret avatar:</p>
-                <span className="text-4xl">{getSelectedEmoji()}</span>
-              </div>
-            )}
           </div>
 
           {/* Submit */}
@@ -144,15 +136,15 @@ function RegistrationScreen() {
             disabled={!firstName || !lastName || selectedAvatarIndex === null}
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-500 hover:to-cyan-500 transition-all"
           >
-            Create Account
+            Sign In
           </button>
         </form>
 
-        {/* Already registered link */}
+        {/* New player link */}
         <p className="text-center mt-6 text-gray-500">
-          Already registered?{' '}
-          <button onClick={() => navigate('/login')} className="text-blue-400 hover:underline">
-            Sign in
+          New player?{' '}
+          <button onClick={() => navigate('/register')} className="text-blue-400 hover:underline">
+            Create account
           </button>
         </p>
       </div>
@@ -160,4 +152,4 @@ function RegistrationScreen() {
   );
 }
 
-export default RegistrationScreen;
+export default LoginScreen;
