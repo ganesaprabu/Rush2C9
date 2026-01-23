@@ -245,3 +245,31 @@ export const getDisplayName = (player) => {
   if (!player) return 'Traveler';
   return `${player.firstName} ${player.lastName}`;
 };
+
+/**
+ * Update player score after completing a game
+ * @param {number} score - Score to add
+ * @param {string} faction - 'lcs' or 'vct' destination chosen
+ * @returns {boolean} Success status
+ */
+export const updatePlayerScore = (score, faction) => {
+  const player = getPlayer();
+  if (!player) return false;
+
+  const players = getAllPlayers();
+
+  // Add score
+  players[player.id].score += score;
+  players[player.id].gamesPlayed += 1;
+
+  // Set faction on first game (or keep existing)
+  if (!players[player.id].faction) {
+    players[player.id].faction = faction;
+  }
+
+  // Update last played timestamp
+  players[player.id].lastPlayedAt = new Date().toISOString();
+
+  savePlayers(players);
+  return true;
+};

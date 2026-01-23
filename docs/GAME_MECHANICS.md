@@ -2,52 +2,59 @@
 
 ## Overview
 
-Rush2C9 is a **skill-based racing game** where fans travel from a random starting city to their chosen Cloud9 arena (LCS or VCT). The game combines **strategic route/vehicle selection** with **Phaser.js racing gameplay**.
+Rush2C9 is a **skill-based racing game** where fans travel from a random starting city to their chosen Cloud9 arena (LCS or VCT). The game combines **Phaser.js racing gameplay** with strategic mid-race decisions.
 
 ---
 
-## Game Vision (Finalized)
+## Game Vision (Finalized - v2)
 
-### Two Distinct Experiences
+### Design Philosophy: Minimal Friction, Maximum Fun
+
+> **Key Insight:** At a booth, every extra screen is friction. Players want to PLAY, not configure.
+
+| Old Approach ❌ | New Approach ✅ |
+|----------------|-----------------|
+| 5+ screens before racing | 1 tap → Racing starts! |
+| Pre-select route difficulty | Auto-assigned (moderate) |
+| Pre-select vehicle | Default Car, switch during game |
+| Map shown before racing | Map shown AFTER as victory screen |
+
+### The Core Loop (Simplified)
+
+```
+1. Home Screen → Tap "LCS" or "VCT"
+         ↓
+2. City Reveal (3 sec auto-advance)
+   "Your journey begins in... LONDON!"
+         ↓
+3. RACING GAME (Phaser.js) — 3 segments
+   - Default vehicle: Car 🚗
+   - Pit Stop between segments (optional vehicle switch)
+   - Steer, avoid obstacles, use boost!
+         ↓
+4. RESULTS SCREEN + JOURNEY MAP
+   - Score breakdown
+   - Map showing full journey traveled
+   - "Look what you accomplished!"
+```
+
+**Total taps before racing: 1** (destination choice)
+**Total time to racing: ~5 seconds**
+
+---
+
+## Two Distinct Experiences
 
 | Mode | Technology | Purpose |
 |------|------------|---------|
-| **Map Mode** | React + SVG/Canvas | Route selection, progress tracking |
-| **Racing Mode** | Phaser.js | Actual gameplay — drive, avoid obstacles, race! |
-
-### The Core Loop
-
-```
-1. Choose Destination (LCS or VCT)
-         ↓
-2. Random Starting City Revealed (e.g., Chennai)
-         ↓
-3. MAP VIEW: See 3 route options on cartoon world map
-         ↓
-4. Select route → See 3 segments breakdown
-   Example: Chennai → Dubai → Germany → LA
-         ↓
-5. RACING GAME (Phaser.js) — Segment 1
-   - Player controls vehicle
-   - Avoid obstacles on the road
-   - Complete segment → Back to MAP
-         ↓
-6. MAP shows Segment 1 complete ✓
-         ↓
-7. RACING GAME — Segment 2
-         ↓
-8. MAP shows Segment 2 complete ✓
-         ↓
-9. RACING GAME — Segment 3
-         ↓
-10. RESULTS: Score breakdown, journey summary
-```
+| **Racing Mode** | Phaser.js | Core gameplay — drive, avoid obstacles, race! |
+| **Journey Map** | React + SVG/Canvas | Victory screen — shows completed journey |
 
 ---
 
-## Road Types (Replaces Terrain)
+## Road Types
 
-> **Decision:** We use road types instead of water/land terrain. This is simpler and more intuitive for a racing game.
+> **Decision:** We use road types instead of water/land terrain. Simpler and more intuitive for a racing game.
 
 | Road Type | Visual | Description | Best Vehicle |
 |-----------|--------|-------------|--------------|
@@ -56,38 +63,37 @@ Rush2C9 is a **skill-based racing game** where fans travel from a random startin
 | **Mud Road** | 🟤 | Wet, slippery, slow | Tractor 🚜 |
 | **Bumpy Road** | 🪨 | Rocky, uneven surface | Truck 🛻 |
 
-### Road-Vehicle Relationship
+### Road-Vehicle Speed Matrix
 
 | Road Type | 🚲 Bike | 🚗 Car | 🚜 Tractor | 🛻 Truck | 🏎️ Sports Car |
 |-----------|---------|--------|------------|----------|---------------|
-| Highway | ⚠️ Slow | ✅ Good | ⚠️ Slow | ⚠️ Slow | ✅ BEST |
-| Tar Road | ✅ Good | ✅ BEST | ⚠️ Slow | ✅ Good | ✅ Good |
+| Highway | ⚠️ Slow | ✅ Good | ❌ Bad | ⚠️ Slow | ✅ BEST |
+| Tar Road | ✅ Good | ✅ Good | ⚠️ Slow | ✅ Good | ✅ Good |
 | Mud Road | ❌ Bad | ⚠️ Slow | ✅ BEST | ✅ Good | ❌ Bad |
-| Bumpy Road | ⚠️ Slow | ❌ Bad | ✅ Good | ✅ BEST | ❌ Bad |
+| Bumpy Road | ⚠️ Slow | ⚠️ Slow | ✅ Good | ✅ BEST | ❌ Bad |
 
 **Key insight:** Wrong vehicle on wrong road = SLOW. Right vehicle = FAST!
 
 ---
 
-## Vehicles (Updated)
+## Vehicles
 
-| Vehicle | Emoji | Cost | Best For | Speed Multiplier |
-|---------|-------|------|----------|------------------|
-| Bike | 🚲 | 20 💳 | Tar Road (budget option) | 1.0x base |
-| Car | 🚗 | 40 💳 | Tar Road, Highway | 1.5x on tar/highway |
-| Tractor | 🚜 | 50 💳 | Mud Road | 2.0x on mud |
-| Truck | 🛻 | 60 💳 | Bumpy Road | 2.0x on bumpy |
-| Sports Car | 🏎️ | 100 💳 | Highway (fastest) | 2.5x on highway |
+| Vehicle | Emoji | Cost | Best For | Notes |
+|---------|-------|------|----------|-------|
+| Bike | 🚲 | 20 💳 | Tar Road | Cheap, vulnerable |
+| Car | 🚗 | 40 💳 | Tar/Highway | **DEFAULT** — balanced |
+| Tractor | 🚜 | 50 💳 | Mud Road | Slow but tough |
+| Truck | 🛻 | 60 💳 | Bumpy Road | Handles rough terrain |
+| Sports Car | 🏎️ | 100 💳 | Highway | Fastest, expensive |
 
-### Vehicle Selection Strategy
+### Vehicle Selection Strategy (NEW: Pit Stop System)
 
-| Situation | Best Choice | Why |
-|-----------|-------------|-----|
-| Highway segment | Sports Car 🏎️ | Fastest, worth the cost |
-| Tar road segment | Car 🚗 | Good speed, reasonable cost |
-| Mud road segment | Tractor 🚜 | Only vehicle that handles mud well |
-| Bumpy road segment | Truck 🛻 | Designed for rough terrain |
-| Low on credits | Bike 🚲 | Cheap, works OK on tar road |
+Instead of pre-selecting vehicles, players:
+1. **Start with Car** (default, balanced)
+2. **See upcoming road type** before each segment
+3. **Decide at Pit Stop**: Keep current vehicle or spend credits to switch
+
+This makes vehicle choice a **strategic mid-game decision** based on actual road conditions!
 
 ---
 
@@ -95,7 +101,7 @@ Rush2C9 is a **skill-based racing game** where fans travel from a random startin
 
 ### Controls
 
-> **Decision:** On-screen arrow buttons (Option C) — clear, visible, no accidental swipes.
+> **Decision:** On-screen arrow buttons — clear, visible, no accidental swipes.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -112,7 +118,7 @@ Rush2C9 is a **skill-based racing game** where fans travel from a random startin
 │                                         │
 │            ┌─────────────┐              │
 │            │  🚀 BOOST   │              │
-│            │   (cost 💳) │              │
+│            │   (10 💳)   │              │
 │            └─────────────┘              │
 └─────────────────────────────────────────┘
 ```
@@ -122,9 +128,9 @@ Rush2C9 is a **skill-based racing game** where fans travel from a random startin
 | Element | Description |
 |---------|-------------|
 | **Steering** | Left/Right buttons to move vehicle |
-| **Obstacles** | Rocks, potholes, barriers, other vehicles on road |
-| **Collision** | Hit obstacle → speed slows down (doesn't stop), gradually recovers |
-| **Booster** | Tap button → temporary speed increase, costs credits |
+| **Obstacles** | Rocks, potholes, barriers, other vehicles |
+| **Collision** | Hit obstacle → speed slows down, gradually recovers |
+| **Booster** | Tap button → temporary speed increase, costs 10 credits |
 | **Finish Line** | Complete segment distance to finish |
 
 ### Obstacle Behavior
@@ -140,192 +146,70 @@ Rush2C9 is a **skill-based racing game** where fans travel from a random startin
 
 | Property | Value |
 |----------|-------|
-| Cost | TBD (decide after testing) |
-| Duration | 2-3 seconds |
+| Cost | 10 💳 per use |
+| Duration | 2 seconds |
 | Speed increase | +50% temporary boost |
 | Cooldown | 3 seconds between boosts |
 | Strategy | Use for final stretch or to recover from obstacle hit |
 
 ---
 
-## Route System
+## Game Flow (Simplified)
 
-### Route Selection on Map
-
-When player sees the map, they see 3 route options:
-
-| Route | Distance | Road Types | Points Multiplier |
-|-------|----------|------------|-------------------|
-| **Short Route** | Less km | Harder roads (mud, bumpy) | 1.0x |
-| **Medium Route** | Medium km | Mixed roads | 1.2x |
-| **Long Route** | More km | Easier roads (tar, highway) | 1.5x |
-
-> **Scoring Logic:** Longer route = more points, but takes more time. Risk/reward!
-
-### Segment Breakdown
-
-After selecting a route, it breaks into 3 segments with waypoints:
-
-**Example (Chennai → LCS Arena via Long Route):**
-```
-Segment 1: Chennai → Dubai (Highway)
-Segment 2: Dubai → Berlin (Tar Road)
-Segment 3: Berlin → Los Angeles (Highway)
-```
-
-### Dynamic Waypoints
-
-- Starting city is **random** (1 of 10 cities)
-- Waypoints are **generated dynamically** based on starting city
-- Creates unique journey each game
-- Same route type will have different waypoints based on origin
-
----
-
-## Game Flow (Detailed)
-
-### Phase 1: Destination Selection
+### Screen 1: Home (Already Built)
 
 ```
 ┌─────────────────────────────────────────┐
-│                                         │
-│            ☁️ RUSH2C9                   │
+│  Welcome back,                   Score  │
+│  GAN NAV                         🏆 0   │
+│─────────────────────────────────────────│
 │                                         │
 │       Choose Your Destination           │
 │                                         │
 │   ┌───────────┐     ┌───────────┐      │
 │   │   🎮 LCS  │     │   🎯 VCT  │      │
 │   │   ARENA   │     │   ARENA   │      │
-│   │           │     │           │      │
 │   │  League   │     │ VALORANT  │      │
 │   └───────────┘     └───────────┘      │
 │                                         │
-│      Which team do you support?         │
+│        ← TAP TO START GAME              │
+│                                         │
+│       [⚔️ Challenge] [🏆 Leaderboard]   │
+│                                         │
+│           Faction War: LCS vs VCT       │
 └─────────────────────────────────────────┘
 ```
 
-### Phase 2: City Reveal
+### Screen 2: City Reveal (Auto-advances after 3 seconds)
 
 ```
 ┌─────────────────────────────────────────┐
 │                                         │
-│         YOUR STARTING CITY              │
+│         Your journey begins in...       │
 │                                         │
-│   ┌─────────────────────────────┐      │
-│   │                             │      │
-│   │   🌏 CARTOON WORLD MAP      │      │
-│   │                             │      │
-│   │       ★ CHENNAI (pulsing)   │      │
-│   │                    🏁 LA    │      │
-│   │                             │      │
-│   └─────────────────────────────┘      │
+│                  🎡                     │
 │                                         │
-│          📍 CHENNAI, INDIA              │
-│          Distance: 14,500 km            │
+│              LONDON                     │
+│              Europe                     │
+│         8,800 km to Los Angeles         │
 │                                         │
-│          [ START JOURNEY ]              │
+│         ┌───────────────────┐          │
+│         │    Destination    │          │
+│         │  🏟️ LCS Arena     │          │
+│         │  League of Legends│          │
+│         └───────────────────┘          │
+│                                         │
+│         [ GET READY... 3 ]             │
+│         (auto-starts racing)            │
 └─────────────────────────────────────────┘
 ```
 
-### Phase 3: Route Selection (Map View)
+### Screen 3: Racing Game (Phaser.js) — CORE GAMEPLAY
 
 ```
 ┌─────────────────────────────────────────┐
-│  Credits: 💳 200                        │
-│─────────────────────────────────────────│
-│                                         │
-│   ┌─────────────────────────────┐      │
-│   │                             │      │
-│   │   🌏 MAP with 3 routes      │      │
-│   │                             │      │
-│   │   ★ Chennai                 │      │
-│   │    ╲___Route A (short)      │      │
-│   │     ╲__Route B (medium)     │      │
-│   │      ╲_Route C (long)       │      │
-│   │                    🏁 LA    │      │
-│   └─────────────────────────────┘      │
-│                                         │
-│  ┌────────────────────────────────┐    │
-│  │ 🅰️ SHORT    8,000 km   1.0x pts │    │
-│  │    Mud → Bumpy → Tar           │    │
-│  └────────────────────────────────┘    │
-│                                         │
-│  ┌────────────────────────────────┐    │
-│  │ 🅱️ MEDIUM  10,500 km   1.2x pts │    │
-│  │    Tar → Mud → Highway         │    │
-│  └────────────────────────────────┘    │
-│                                         │
-│  ┌────────────────────────────────┐    │
-│  │ 🅲️ LONG    14,500 km   1.5x pts │    │
-│  │    Highway → Tar → Highway     │    │
-│  └────────────────────────────────┘    │
-└─────────────────────────────────────────┘
-```
-
-### Phase 4: Segment Breakdown
-
-After route selection, show the 3 segments:
-
-```
-┌─────────────────────────────────────────┐
-│  Route: LONG (14,500 km)   💳 200       │
-│─────────────────────────────────────────│
-│                                         │
-│   Your journey in 3 segments:           │
-│                                         │
-│   ┌─────────────────────────────┐      │
-│   │ Segment 1: Chennai → Dubai  │      │
-│   │ 🛣️ Highway | 4,800 km       │      │
-│   └─────────────────────────────┘      │
-│                                         │
-│   ┌─────────────────────────────┐      │
-│   │ Segment 2: Dubai → Berlin   │      │
-│   │ 🛤️ Tar Road | 5,200 km      │      │
-│   └─────────────────────────────┘      │
-│                                         │
-│   ┌─────────────────────────────┐      │
-│   │ Segment 3: Berlin → LA      │      │
-│   │ 🛣️ Highway | 4,500 km       │      │
-│   └─────────────────────────────┘      │
-│                                         │
-│   [ SELECT VEHICLE FOR SEGMENT 1 ]      │
-└─────────────────────────────────────────┘
-```
-
-### Phase 5: Vehicle Selection (Per Segment)
-
-```
-┌─────────────────────────────────────────┐
-│  Segment 1 of 3              💳 200     │
-│  Chennai → Dubai | 🛣️ Highway           │
-│─────────────────────────────────────────│
-│                                         │
-│  Choose your vehicle:                   │
-│                                         │
-│  ┌────────┐ ┌────────┐ ┌────────┐      │
-│  │   🚲   │ │   🚗   │ │   🚜   │      │
-│  │  Bike  │ │  Car   │ │Tractor │      │
-│  │ 20 💳  │ │ 40 💳  │ │ 50 💳  │      │
-│  │ ⚠️SLOW │ │ ✅GOOD │ │ ⚠️SLOW │      │
-│  └────────┘ └────────┘ └────────┘      │
-│                                         │
-│  ┌────────┐ ┌────────┐                 │
-│  │   🛻   │ │   🏎️   │                 │
-│  │ Truck  │ │ Sports │                 │
-│  │ 60 💳  │ │ 100💳  │                 │
-│  │ ⚠️SLOW │ │ ✅BEST │  ← Hints!       │
-│  └────────┘ └────────┘                 │
-│                                         │
-│        [ ← BACK ]    [ CONFIRM ]        │
-└─────────────────────────────────────────┘
-```
-
-### Phase 6: Racing Game (Phaser.js)
-
-```
-┌─────────────────────────────────────────┐
-│  Segment 1/3  Chennai→Dubai  💳 100     │
-│  ████████░░░░░░░░ 45%     ⏱️ 12.3s     │
+│  Seg 1/3  London→Dublin   💳 200        │
+│  ████████░░░░░░░░ 45%     🛣️ Highway   │
 │─────────────────────────────────────────│
 │                                         │
 │           |     |     |                 │
@@ -333,7 +217,7 @@ After route selection, show the 3 segments:
 │           |     |     |                 │
 │     ------+-----+-----+------           │
 │           |     |     |                 │
-│           |     | 🏎️  |  ← Player      │
+│           |     | 🚗  |  ← Player       │
 │           |     |     |                 │
 │     ------+-----+-----+------           │
 │           |     |     |                 │
@@ -349,72 +233,65 @@ After route selection, show the 3 segments:
 └─────────────────────────────────────────┘
 ```
 
-**Racing Elements:**
-- Pseudo-3D road perspective (like Phaser Driving example)
-- Obstacles spawn and scroll toward player
-- Player steers left/right to avoid
-- Progress bar shows segment completion
-- Timer shows elapsed time
-- Boost button for temporary speed increase
-
-### Phase 7: Segment Complete → Back to Map
+### Screen 3b: Pit Stop (Between Segments — Optional)
 
 ```
 ┌─────────────────────────────────────────┐
 │                                         │
 │         ✅ SEGMENT 1 COMPLETE!          │
+│         London → Dublin: 24.5s          │
 │                                         │
-│         Chennai → Dubai                 │
-│         Time: 24.5 seconds              │
-│         Obstacles hit: 3                │
+│─────────────────────────────────────────│
+│  NEXT: Dublin → Reykjavik               │
+│  Road Type: 🟤 MUD ROAD                 │
+│─────────────────────────────────────────│
 │                                         │
-│   ┌─────────────────────────────┐      │
-│   │                             │      │
-│   │   🌏 MAP                    │      │
-│   │                             │      │
-│   │   ★ Chennai ──✓── Dubai     │      │
-│   │                    ↓        │      │
-│   │                  Berlin     │      │
-│   │                    ↓        │      │
-│   │                   LA 🏁     │      │
-│   └─────────────────────────────┘      │
+│  Current Vehicle: 🚗 Car (⚠️ SLOW)      │
 │                                         │
-│   Progress: [●●○] 1 of 3 complete       │
+│  💡 Tip: Tractor handles mud better!    │
 │                                         │
-│   [ SELECT VEHICLE FOR SEGMENT 2 ]      │
+│  ┌────────────────────────────────┐    │
+│  │  🚜 Switch to Tractor?         │    │
+│  │  Cost: 50 💳  |  You have: 200 │    │
+│  │                                │    │
+│  │  [ SWITCH ]    [ KEEP CAR ]    │    │
+│  └────────────────────────────────┘    │
+│                                         │
+│     Auto-continues in 5 seconds...      │
 └─────────────────────────────────────────┘
 ```
 
-### Phase 8: Results Screen
+### Screen 4: Results + Journey Map (NEW!)
 
 ```
 ┌─────────────────────────────────────────┐
 │                                         │
 │         🏁 JOURNEY COMPLETE! 🏁         │
 │                                         │
-│         Chennai → LCS Arena             │
-│                                         │
 │         ┌───────────────────┐          │
 │         │                   │          │
 │         │   YOUR SCORE      │          │
-│         │                   │          │
 │         │    ⭐ 785 ⭐      │          │
 │         │                   │          │
 │         └───────────────────┘          │
 │                                         │
-│  Score Breakdown:                       │
-│  ├── Base Points:      500              │
-│  ├── Distance Bonus:   +150 (1.5x)      │
-│  ├── Time Bonus:       +85              │
-│  └── Credits Saved:    +50              │
+│  ┌─────────────────────────────────┐   │
+│  │     🌍 YOUR JOURNEY MAP         │   │
+│  │                                 │   │
+│  │  🎡 London                      │   │
+│  │     ↓ ─────────────────        │   │
+│  │  🍀 Dublin                      │   │
+│  │     ↓ ─────────────────        │   │
+│  │  🧊 Reykjavik                   │   │
+│  │     ↓ ─────────────────        │   │
+│  │  🏔️ Denver                      │   │
+│  │     ↓ ─────────────────        │   │
+│  │  🏟️ LCS Arena, Los Angeles     │   │
+│  │                                 │   │
+│  └─────────────────────────────────┘   │
 │                                         │
-│  Journey Summary:                       │
-│  ├── Seg 1: 🏎️ Highway  → 24.5s        │
-│  ├── Seg 2: 🚗 Tar Road → 32.1s        │
-│  └── Seg 3: 🏎️ Highway  → 21.8s        │
-│                                         │
-│  Total Time: 78.4 seconds               │
-│  Obstacles Hit: 7                       │
+│  Journey: 8,800 km in 78.4 seconds     │
+│  Obstacles hit: 7                       │
 │                                         │
 │    [ 🏠 HOME ]    [ 🔄 PLAY AGAIN ]     │
 └─────────────────────────────────────────┘
@@ -422,40 +299,64 @@ After route selection, show the 3 segments:
 
 ---
 
-## Scoring System (Updated)
+## Route System (Simplified)
+
+### Auto-Generated Routes
+
+Instead of player selecting route difficulty:
+- Route difficulty is **auto-assigned** (moderate by default)
+- Creates 3 segments with mixed road types
+- Each starting city has **predefined waypoints**
+
+### Example Routes by Starting City
+
+| Starting City | Waypoints | Final |
+|---------------|-----------|-------|
+| Tokyo | Honolulu → San Francisco → Las Vegas | LA |
+| London | Dublin → Reykjavik → Denver | LA |
+| Chennai | Dubai → London → New York | LA |
+| Sydney | Auckland → Fiji → Honolulu | LA |
+
+### Segment Road Types
+
+Road types are randomly assigned based on moderate difficulty:
+- ~30% Highway
+- ~30% Tar Road
+- ~20% Mud Road
+- ~20% Bumpy Road
+
+This creates variety without requiring player input.
+
+---
+
+## Scoring System
 
 ### Score Calculation
 
 ```
 FINAL SCORE = Base Points
-            + Distance Bonus (route multiplier)
             + Time Bonus
             + Credits Saved
-            - Obstacle Penalty (optional)
 
 Where:
 - Base Points: 500 (for completing journey)
-- Distance Bonus: Base × Route Multiplier (1.0x, 1.2x, or 1.5x)
 - Time Bonus: MAX(0, 300 - Total Travel Time in seconds)
 - Credits Saved: Unspent credits from 200 budget
-- Obstacle Penalty: TBD (optional, may remove for simplicity)
 ```
 
-### Example Calculations
+### Example Calculation
 
-**Scenario: Long route, fast completion, budget vehicles**
-- Route: Long (1.5x multiplier)
+**Scenario: Fast completion, used default car throughout**
 - Total time: 78 seconds
-- Credits spent: 150 (used cheaper vehicles)
-- Score = 500 + (500 × 0.5) + (300 - 78) + (200 - 150)
-- Score = 500 + 250 + 222 + 50 = **1,022 pts**
+- Credits spent: 0 (kept default car, no boosts)
+- Score = 500 + (300 - 78) + 200
+- Score = 500 + 222 + 200 = **922 pts**
 
-**Scenario: Short route, slow completion, expensive vehicles**
-- Route: Short (1.0x multiplier)
+**Scenario: Slow completion, switched vehicles + used boosts**
 - Total time: 120 seconds
-- Credits spent: 180 (used expensive vehicles on wrong roads)
-- Score = 500 + (500 × 0) + (300 - 120) + (200 - 180)
-- Score = 500 + 0 + 180 + 20 = **700 pts**
+- Credits spent: 150 (vehicle switches + boosts)
+- Score = 500 + (300 - 120) + 50
+- Score = 500 + 180 + 50 = **730 pts**
 
 ---
 
@@ -465,36 +366,37 @@ Where:
 
 | Currency | Symbol | Purpose | Behavior |
 |----------|--------|---------|----------|
-| **Credits** | 💳 | Buy vehicles, use boosters | Refreshes each game (200 per game) |
+| **Credits** | 💳 | Vehicle switches, boosters | Refreshes each game (200 per game) |
 | **Score** | 🏆 | Leaderboard ranking | Accumulates permanently |
 
 ### Credit Usage
 
 | Action | Cost |
 |--------|------|
-| Bike | 20 💳 |
-| Car | 40 💳 |
-| Tractor | 50 💳 |
-| Truck | 60 💳 |
-| Sports Car | 100 💳 |
-| Booster (per use) | TBD 💳 |
+| Keep current vehicle | 0 💳 |
+| Switch to Bike | 20 💳 |
+| Switch to Car | 40 💳 |
+| Switch to Tractor | 50 💳 |
+| Switch to Truck | 60 💳 |
+| Switch to Sports Car | 100 💳 |
+| Use Booster | 10 💳 |
 
 ---
 
 ## Starting Cities (10)
 
-| # | City | Region | Distance to LA |
-|---|------|--------|----------------|
-| 1 | Tokyo | Asia | 8,800 km |
-| 2 | Seoul | Asia | 9,500 km |
-| 3 | Chennai | Asia | 14,500 km |
-| 4 | Dubai | Middle East | 13,400 km |
-| 5 | Sydney | Oceania | 12,000 km |
-| 6 | London | Europe | 8,800 km |
-| 7 | Paris | Europe | 9,100 km |
-| 8 | Berlin | Europe | 9,300 km |
-| 9 | São Paulo | South America | 9,900 km |
-| 10 | Toronto | North America | 3,500 km |
+| # | City | Emoji | Region | Waypoints |
+|---|------|-------|--------|-----------|
+| 1 | Tokyo | 🗼 | Asia | Honolulu, San Francisco, Las Vegas |
+| 2 | Seoul | 🏯 | Asia | Shanghai, Honolulu, Phoenix |
+| 3 | Chennai | 🕌 | Asia | Dubai, London, New York |
+| 4 | Dubai | 🏗️ | Middle East | Istanbul, Paris, Chicago |
+| 5 | Sydney | 🦘 | Oceania | Auckland, Fiji, Honolulu |
+| 6 | London | 🎡 | Europe | Dublin, Reykjavik, Denver |
+| 7 | Paris | 🗼 | Europe | Madrid, Lisbon, Miami |
+| 8 | Berlin | 🏛️ | Europe | Amsterdam, Toronto, Detroit |
+| 9 | São Paulo | 🌴 | South America | Lima, Panama City, Mexico City |
+| 10 | Toronto | 🍁 | North America | Chicago, Denver, Las Vegas |
 
 ---
 
@@ -506,6 +408,67 @@ Where:
 | **VCT Arena** | Los Angeles, USA | VALORANT Champions Tour |
 
 Both are in LA. Choice determines faction allegiance.
+
+---
+
+## Journey Map (End Screen Feature)
+
+### Purpose
+
+The Journey Map is shown at the **END** of the game, not the beginning. This serves multiple purposes:
+
+| Benefit | Description |
+|---------|-------------|
+| **Reward** | Visual celebration of accomplishment |
+| **Closure** | Shows the complete journey traveled |
+| **Shareable** | Cool visual players might screenshot |
+| **Memorable** | Creates lasting impression |
+
+### Map Elements
+
+| Element | Visual |
+|---------|--------|
+| Starting city | 📍 Pin with city emoji |
+| Waypoints | 🔵 Dots along the route |
+| Destination | 🏁 Flag at LCS/VCT Arena |
+| Route line | Dotted/dashed path connecting cities |
+| Animation | Route draws from start to finish |
+
+### Map Style
+
+- **Cartoon/stylized** world map (not realistic)
+- **Colorful** cities and landmarks
+- **Simple** — readable on phone screens
+- **Cloud9 branded** colors where appropriate
+
+---
+
+## Pit Stop System (NEW)
+
+### How It Works
+
+Between each segment, players see a **Pit Stop screen**:
+
+1. **Segment complete** message with time
+2. **Next segment info**: route + road type
+3. **Vehicle recommendation** based on road
+4. **Choice**: Switch vehicle or keep current
+5. **Auto-continues** after 5 seconds if no action
+
+### Strategic Depth
+
+This creates interesting decisions:
+- Spent credits on early switches? May not afford later
+- See mud road coming? Maybe switch to Tractor
+- Highway ahead? Sports Car worth the cost?
+- Confident in driving skill? Keep Car and save credits
+
+### Default Behavior
+
+If player does nothing:
+- **Auto-continues** with current vehicle after 5 seconds
+- No credits spent
+- Good for players who want simple experience
 
 ---
 
@@ -532,27 +495,6 @@ Both are in LA. Choice determines faction allegiance.
 └─────────────────────────────┘
 ```
 
-### Racing Controls Layout
-
-```
-┌─────────────────────────────────────────┐
-│                                         │
-│         [GAME VIEW - TOP 60%]           │
-│                                         │
-│─────────────────────────────────────────│
-│                                         │
-│   ┌─────┐               ┌─────┐        │
-│   │  ◀  │               │  ▶  │        │  ← 80px buttons
-│   │LEFT │               │RIGHT│        │
-│   └─────┘               └─────┘        │
-│                                         │
-│          ┌──────────────┐               │
-│          │  🚀 BOOST    │               │  ← Centered
-│          └──────────────┘               │
-│                                         │
-└─────────────────────────────────────────┘
-```
-
 ---
 
 ## Booth Environment Context
@@ -573,7 +515,7 @@ Both are in LA. Choice determines faction allegiance.
 | Constraint | Our Solution |
 |------------|--------------|
 | Loud environment | No audio required, 100% visual |
-| Short attention | Quick 2-3 minute games |
+| Short attention | Quick start, minimal screens |
 | Phone screens | Touch-friendly UI, big buttons |
 | Standing/walking | On-screen arrow controls |
 | Competition | Leaderboard creates energy |
@@ -584,14 +526,14 @@ Both are in LA. Choice determines faction allegiance.
 
 | Phase | Target Time |
 |-------|-------------|
-| Destination + City reveal | ~30 seconds |
-| Route selection | ~30 seconds |
-| Vehicle selection (×3) | ~30 seconds total |
-| Racing segments (×3) | ~90 seconds total |
-| Results | ~15 seconds |
-| **TOTAL** | **~2.5-3 minutes** |
+| Destination tap | 2 seconds |
+| City reveal | 3 seconds (auto) |
+| Racing (3 segments) | ~90 seconds |
+| Pit stops (2 between segments) | ~10 seconds total |
+| Results + Map | ~15 seconds |
+| **TOTAL** | **~2 minutes** |
 
-Perfect for booth environment!
+Even faster than before! Perfect for booth environment.
 
 ---
 
@@ -614,51 +556,17 @@ Every completed journey adds to faction totals:
 
 ---
 
-## Duel System (Future - v6.0)
-
-### How Duels Work
-
-1. Fan A challenges Fan B
-2. Fan B accepts
-3. Both bet scores
-4. Same starting city assigned
-5. Both race simultaneously
-6. Winner takes bet
-
----
-
-## Leaderboard (v4.0)
-
-- Top players displayed
-- Faction totals
-- Personal rank
-- Avatars NEVER shown publicly (secret like passwords)
-
----
-
-## Edge Cases
-
-| Scenario | Handling |
-|----------|----------|
-| Fan runs out of credits | Cannot happen — cheapest path = 60 credits |
-| Same name + avatar | System rejects, pick different avatar |
-| Fan disconnects | Game state saved, can resume |
-| Too long (>5 min) | Auto-complete with minimum score |
-| Hit too many obstacles | Keep going, just slower time |
-
----
-
 ## Technical Implementation Notes
 
 ### Technology Stack
 
 | Component | Technology |
 |-----------|------------|
-| Map View | React + SVG/Canvas |
+| Home/UI | React + Tailwind CSS |
 | Racing Game | Phaser.js 3.x |
+| Journey Map | React + SVG/Canvas |
 | State Management | React useState/useReducer |
 | Data Persistence | localStorage (→ Firebase later) |
-| Styling | Tailwind CSS |
 
 ### Phaser Racing Reference
 
@@ -671,23 +579,26 @@ Every completed journey adds to faction totals:
 
 ## Decisions Log
 
-| Decision | Choice | Reason |
-|----------|--------|--------|
-| Road types vs terrain | Road types | More intuitive for racing game |
-| Vehicles | 5 road vehicles | Matches road types, no water/air needed |
-| Controls | On-screen buttons | No accidental swipes, clear visibility |
-| Game engine | Phaser.js | Real game feel, not just form filling |
-| Map style | Cartoon 2D | Fun, readable on phone, matches booth vibe |
-| Booster cost | TBD | Decide after testing game balance |
+| Date | Decision | Choice | Reason |
+|------|----------|--------|--------|
+| Jan 23 | Road types vs terrain | Road types | More intuitive for racing game |
+| Jan 23 | Vehicles | 5 road vehicles | Matches road types, no water/air |
+| Jan 23 | Controls | On-screen buttons | No accidental swipes |
+| Jan 23 | Game engine | Phaser.js | Real game feel |
+| Jan 23 | **Simplified flow** | 1 tap → racing | Reduce friction at booth |
+| Jan 23 | **Vehicle selection** | Pit Stop mid-game | Strategic, not upfront guess |
+| Jan 23 | **Map timing** | Show at END | Victory screen, not setup |
+| Jan 23 | **Route selection** | Auto (moderate) | Faster start |
 
 ---
 
 ## Summary
 
 Rush2C9 is designed to be:
-- 🎮 **A Real Game** — Phaser.js racing, not just clicking buttons
-- ⚡ **Fast** — 2-3 minute games
-- 🧠 **Strategic** — Route + vehicle choices matter
+- 🚀 **Instant** — 1 tap to start, racing in 5 seconds
+- 🎮 **A Real Game** — Phaser.js racing, skill-based
+- 🧠 **Strategic** — Pit Stop vehicle decisions matter
 - 🏆 **Competitive** — Leaderboard + faction war
 - 📱 **Touch-Friendly** — Big buttons, clear controls
 - 🎉 **Fun at Booths** — Loud environment friendly
+- 🗺️ **Rewarding** — Journey Map celebrates completion

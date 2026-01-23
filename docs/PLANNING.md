@@ -12,17 +12,19 @@
 
 ## The Concept
 
-Rush2C9 is a browser-based mini-game designed for Cloud9 fan booths at LCS and VCT events. Fans race from random starting cities around the world to reach either the LCS Arena or VCT Arena, choosing optimal routes and vehicles to achieve the fastest time.
+Rush2C9 is a browser-based mini-game designed for Cloud9 fan booths at LCS and VCT events. Fans race from random starting cities around the world to reach either the LCS Arena or VCT Arena using skill-based Phaser.js racing gameplay.
 
-### Core Experience
+### Core Experience (Simplified Flow)
 1. Fan scans QR code at booth → Opens game in phone browser
 2. Registers with name + secret avatar (no password needed)
-3. Chooses destination: LCS Arena or VCT Arena
-4. System assigns random starting city
-5. Fan selects routes and vehicles across 3 segments
-6. Faster arrival = Higher score
-7. Scores feed into live leaderboard on booth's big screen
-8. Fans can challenge each other to duels with score betting
+3. Taps destination: LCS Arena or VCT Arena → **Game starts immediately!**
+4. System assigns random starting city (3-sec reveal)
+5. **RACING** — Phaser.js pseudo-3D racing through 3 segments
+6. Pit Stops between segments — optional vehicle switch
+7. **Results + Journey Map** — Score breakdown + visual journey!
+8. Scores feed into live leaderboard on booth's big screen
+
+**Key Change (Jan 23):** Reduced from 5+ screens to 1 tap before racing!
 
 ---
 
@@ -42,48 +44,53 @@ Rush2C9 is a browser-based mini-game designed for Cloud9 fan booths at LCS and V
 - Select avatar from categories (secret, like a PIN)
 - No password, no email, no phone number
 
-### 2. Global Race Gameplay
+### 2. Instant Racing Gameplay
+- 1 tap (destination) → Racing starts in 5 seconds
 - 10 starting cities worldwide
-- 2 destinations (LCS Arena, VCT Arena)
-- 3 route segments per journey
-- 3 route options per segment
-- 5 vehicle types with different costs/speeds
+- 3 racing segments per journey
+- Phaser.js pseudo-3D racing (OutRun style)
+- Steer, avoid obstacles, use boost
 
-### 3. Dual Currency System
-- **Credits:** Spent on vehicles (replenishes each game)
+### 3. Pit Stop System (Mid-Game Strategy)
+- Between segments, see next road type
+- Optional vehicle switch (costs credits)
+- Auto-continues in 5 seconds (no friction)
+- Strategic depth without upfront confusion
+
+### 4. Journey Map (Victory Screen)
+- Shown at END of game (not beginning)
+- Visual celebration of completed journey
+- Start city → Waypoints → Destination
+- Shareable, memorable moment
+
+### 5. Dual Currency System
+- **Credits:** Spent on vehicles/boosts (replenishes each game)
 - **Score:** Accumulated based on performance (permanent)
 
-### 4. Faction War
+### 6. Faction War
 - Fans choose LCS or VCT destination
 - Big screen shows which faction is winning
 - Creates community rivalry
 
-### 5. Duel System
+### 7. Duel System (Future)
 - Challenge another fan
 - Both get same starting city
 - Bet scores against each other
 - Winner takes the bet amount
 
-### 6. Live Leaderboard
+### 8. Live Leaderboard
 - Displayed on booth's big screen
 - Real-time updates via WebSocket
 - Shows top travelers and faction scores
 
-### 7. Booth Setup (QR Code Flow)
+### 9. Booth Setup (QR Code Flow)
 - **Booth displays:** Large screen with leaderboard + QR code
 - **Fan scans QR:** Opens game URL in phone browser (no app install)
 - **Fan plays:** On their own phone, anywhere at the event
 - **Scores sync:** Real-time to booth's big screen
 - **Multiple fans:** Can play simultaneously (no queue!)
 
-### 8. Big Screen Display
-The booth's big screen shows:
-- Live leaderboard (top travelers)
-- Faction war progress (LCS vs VCT)
-- Live duels in progress
-- QR code for new players to join
-
-### 9. Avatar Privacy (IMPORTANT)
+### 10. Avatar Privacy (IMPORTANT)
 - Avatar is like a SECRET PIN — used for login
 - Avatar is NEVER shown on public leaderboard
 - Leaderboard only shows: Name + Score
@@ -153,27 +160,34 @@ The booth's big screen shows:
 
 ---
 
-## Game Flow
+## Game Flow (Simplified - v2)
 
 ```
-[QR Scan] → [Registration] → [Choose Destination] → [See Starting City]
-                                                            ↓
-[Finish! See Score] ← [Segment 3] ← [Segment 2] ← [Segment 1]
-                                                            ↓
-                                               [Route + Vehicle Selection]
+[QR Scan] → [Registration] → [Home Screen]
+                                   ↓
+                         [Tap LCS or VCT] ← 1 TAP TO START!
+                                   ↓
+                         [City Reveal - 3 sec]
+                                   ↓
+                         [PHASER RACING - Segment 1]
+                                   ↓
+                         [Pit Stop - optional vehicle switch]
+                                   ↓
+                         [PHASER RACING - Segment 2]
+                                   ↓
+                         [Pit Stop - optional vehicle switch]
+                                   ↓
+                         [PHASER RACING - Segment 3]
+                                   ↓
+                         [RESULTS + JOURNEY MAP]
 ```
 
-### Detailed Flow
-1. **Scan QR** → Opens game URL in browser
-2. **Registration** → Name + Avatar (or login if returning)
-3. **Home Screen** → Play, Duel, Leaderboard options
-4. **Choose Destination** → LCS Arena or VCT Arena
-5. **Starting City Revealed** → Random from 10 cities
-6. **Segment 1** → See 3 routes, pick one, pick vehicle
-7. **Travel Animation** → Watch progress, time ticking
-8. **Segment 2** → Repeat route + vehicle selection
-9. **Segment 3** → Final leg of journey
-10. **Arrival!** → See final time, score calculation, rank
+### Time to First Action
+| Old Flow | New Flow |
+|----------|----------|
+| 5+ screens before racing | 1 tap before racing |
+| ~60 seconds to start | ~5 seconds to start |
+| Player configures everything | System handles defaults |
 
 ---
 
@@ -188,7 +202,7 @@ The booth's big screen shows:
 | v0.0 | Documentation | Project plan, game mechanics, Git strategy | ✅ Complete |
 | v1.0 | Setup | React + Vite + Tailwind + folder structure | ✅ Complete |
 | v2.0 | Registration | Create account, login, logout, protected routes | ✅ Complete |
-| v3.0 | Gameplay | Map view + Phaser racing game + scoring | ⏳ In Progress |
+| v3.0 | Gameplay | Phaser racing game + Pit Stops + Journey Map | ⏳ In Progress |
 | v4.0 | Leaderboard | View rankings, faction totals, personal stats | ⏳ Pending |
 | v5.0 | Firebase | Cloud sync, real-time leaderboard, data persistence | ⏳ Pending |
 | v6.0 | Duels | Challenge players, bet scores, same starting city | ⏳ Pending |
@@ -220,66 +234,77 @@ The booth's big screen shows:
 - [x] Protected routes (redirect if not logged in)
 - [x] Switch account / delete account
 
-### v3.0 — Gameplay (Phaser Racing Game) ⏳
+### v3.0 — Gameplay (Simplified Flow) ⏳
 
 > **Full details:** See [GAME_MECHANICS.md](./GAME_MECHANICS.md)
 
-#### Phase 3.1: Game Data Architecture
-- [ ] Update gameData.js with new vehicles (Bike, Car, Tractor, Truck, Sports Car)
-- [ ] Add road types (Highway, Tar Road, Mud Road, Bumpy Road)
-- [ ] Create route generation logic (city → waypoints → LA)
-- [ ] Define vehicle-road speed relationships
+#### Phase 3.1: Game Data Architecture ✅
+- [x] Update gameData.js with new vehicles (Bike, Car, Tractor, Truck, Sports Car)
+- [x] Add road types (Highway, Tar Road, Mud Road, Bumpy Road)
+- [x] Create route generation logic (city → waypoints → LA)
+- [x] Define vehicle-road speed relationships
+- [x] Add Phaser configuration constants
+- [x] Add obstacle definitions
 
-#### Phase 3.2: Destination Selection Screen
-- [ ] LCS vs VCT picker (large touch-friendly cards)
-- [ ] Faction selection affects faction war totals
-
-#### Phase 3.3: City Reveal Screen
+#### Phase 3.2: City Reveal Screen (Auto-Advance)
 - [ ] Random city assignment from 10 cities
-- [ ] Display city name, region, distance to LA
-- [ ] "Start Journey" button
+- [ ] Display city name, emoji, region, distance to LA
+- [ ] Show selected destination (LCS/VCT)
+- [ ] Auto-advance after 3 seconds (with countdown)
+- [ ] "GET READY" animation
 
-#### Phase 3.4: Map View (Route Selection)
-- [ ] Cartoon world map component (React + SVG/Canvas)
-- [ ] Show 3 route options with different waypoints
-- [ ] Display road types and distances per route
-- [ ] Route cards with points multiplier (1.0x, 1.2x, 1.5x)
-
-#### Phase 3.5: Segment Breakdown Screen
-- [ ] Show 3 segments after route selection
-- [ ] Display waypoint cities and road types
-- [ ] "Select Vehicle" button for each segment
-
-#### Phase 3.6: Vehicle Selection (Per Segment)
-- [ ] 5 vehicles with costs and road hints
-- [ ] GOOD/SLOW/BAD indicators based on road type
-- [ ] Confirm button (not auto-select)
-- [ ] Credits tracking
-
-#### Phase 3.7: Phaser Racing Game
-- [ ] Initialize Phaser canvas in React
+#### Phase 3.3: Phaser Racing Game (CORE)
+- [ ] Initialize Phaser canvas in React component
 - [ ] Pseudo-3D road rendering (OutRun style)
-- [ ] Vehicle sprite on road
+- [ ] Default vehicle: Car (no pre-selection needed)
 - [ ] Left/Right steering with on-screen buttons
-- [ ] Obstacle spawning and collision detection
-- [ ] Speed reduction on obstacle hit
-- [ ] Gradual speed recovery
-- [ ] Boost button (costs credits)
-- [ ] Progress bar and timer
+- [ ] Boost button (costs 10 credits)
+- [ ] Obstacle spawning based on road type
+- [ ] Collision detection and speed reduction
+- [ ] Gradual speed recovery after collision
+- [ ] Progress bar showing segment completion
+- [ ] Timer showing elapsed time
+- [ ] Road type indicator in HUD
+- [ ] Credits display in HUD
 - [ ] Segment completion detection
 
-#### Phase 3.8: Segment Loop & Map Progress
-- [ ] Return to map after segment completion
-- [ ] Show completed segments on map
-- [ ] Progress indicator (1/3, 2/3, 3/3)
-- [ ] Loop through all 3 segments
+#### Phase 3.4: Pit Stop Screen (Between Segments)
+- [ ] "Segment Complete" celebration
+- [ ] Show time taken for segment
+- [ ] Show NEXT segment's road type
+- [ ] Current vehicle speed rating for next road
+- [ ] Recommended vehicle suggestion
+- [ ] Vehicle switch option (with costs)
+- [ ] "Keep Current" option (free)
+- [ ] Auto-continue timer (5 seconds)
+- [ ] Skip immediately if player taps continue
 
-#### Phase 3.9: Results Screen
-- [ ] Score calculation (base + distance bonus + time bonus + credits saved)
-- [ ] Journey summary with all segments
+#### Phase 3.5: Segment Loop
+- [ ] Track current segment (1, 2, 3)
+- [ ] Loop: Racing → Pit Stop → Racing → Pit Stop → Racing
+- [ ] Update route progress after each segment
+- [ ] Track total time across segments
+- [ ] Track total credits spent
+- [ ] Detect journey completion
+
+#### Phase 3.6: Results Screen + Journey Map
+- [ ] "Journey Complete" celebration
+- [ ] Score calculation:
+  - Base Points: 500
+  - Time Bonus: MAX(0, 300 - totalTime)
+  - Credits Saved: 200 - creditsSpent
+- [ ] Score breakdown display
+- [ ] **Journey Map Component:**
+  - Starting city (with emoji)
+  - Waypoints passed through
+  - Destination (LCS/VCT Arena)
+  - Animated route line drawing
+  - Stylized/cartoon map style
+- [ ] Journey stats: Total distance, time, obstacles hit
 - [ ] Save score to player profile
 - [ ] Update faction totals
-- [ ] Play Again / Home buttons
+- [ ] "Play Again" button
+- [ ] "Home" button
 
 ### v4.0 — Leaderboard
 - [ ] Leaderboard screen with top players
@@ -350,6 +375,18 @@ The booth's big screen shows:
 
 ---
 
+## Key Design Decisions (Jan 23)
+
+| Decision | Before | After | Why |
+|----------|--------|-------|-----|
+| Screens before racing | 5+ screens | 1 tap | Reduce friction at booth |
+| Route selection | Player picks | Auto (moderate) | Faster start |
+| Vehicle selection | Before racing | Pit Stop mid-game | Strategic, not confusing |
+| Map view | Before racing | After (results) | Victory celebration |
+| Game duration | ~3 min | ~2 min | Better for booth |
+
+---
+
 ## References
 
 - [Cloud9 x JetBrains Hackathon](https://cloud9.devpost.com/)
@@ -357,3 +394,4 @@ The booth's big screen shows:
 - [Cloud9 Official Website](https://cloud9.gg/)
 - [Phaser.js Documentation](https://phaser.io/)
 - [Firebase Documentation](https://firebase.google.com/docs)
+- [Phaser Driving Example](https://moonsault.itch.io/phaser-driving)

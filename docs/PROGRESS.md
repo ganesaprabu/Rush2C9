@@ -29,7 +29,7 @@
 | v0.0 | Documentation | ✅ Complete | v0.0-docs |
 | v1.0 | Setup | ✅ Complete | v1.0-setup |
 | v2.0 | Registration | ✅ Complete | v2.0-registration |
-| v3.0 | Gameplay (Phaser Racing) | ⏳ In Progress | — |
+| v3.0 | Gameplay (Simplified Flow) | ⏳ In Progress | — |
 | v4.0 | Leaderboard | ⏳ Pending | — |
 | v5.0 | Firebase | ⏳ Pending | — |
 | v6.0 | Duels | ⏳ Pending | — |
@@ -37,7 +37,7 @@
 | v8.0 | Polish | ⏳ Pending | — |
 | v9.0 | Release | ⏳ Pending | — |
 
-**Current Focus:** v3.0 — Building Phaser.js racing game with map view
+**Current Focus:** v3.0 — Building Phaser.js racing game with simplified flow
 
 ---
 
@@ -47,7 +47,7 @@
 |------|--------|
 | **Submission Deadline** | February 3, 2026 @ 11:00 AM PT |
 | **Your Time (IST)** | February 4, 2026 @ 12:30 AM |
-| **Days Remaining** | ~12 days |
+| **Days Remaining** | ~11 days |
 
 ### Before Submission Checklist
 - [ ] Make GitHub repo **PUBLIC**
@@ -55,6 +55,73 @@
 - [ ] Complete Devpost submission form
 - [ ] Test game on mobile browser
 - [ ] Verify all links work
+
+---
+
+## v3.0 — Gameplay (Simplified Flow)
+
+> **Full Details:** See [GAME_MECHANICS.md](./GAME_MECHANICS.md) for complete game design
+
+### Current Status: ⏳ In Progress
+
+| Phase | Task | Status |
+|-------|------|--------|
+| 3.1 | Game Data Architecture | ✅ Complete |
+| 3.2 | City Reveal Screen (Auto-Advance) | ⏳ Pending |
+| 3.3 | Phaser Racing Game (CORE) | ⏳ Pending |
+| 3.4 | Pit Stop Screen | ⏳ Pending |
+| 3.5 | Segment Loop | ⏳ Pending |
+| 3.6 | Results Screen + Journey Map | ⏳ Pending |
+
+### Phase Details:
+
+**3.1 Game Data Architecture ✅**
+- [x] Update gameData.js with new vehicles (Bike, Car, Tractor, Truck, Sports Car)
+- [x] Add road types (Highway, Tar Road, Mud Road, Bumpy Road)
+- [x] Create route generation logic (city → waypoints → LA)
+- [x] Define vehicle-road speed relationships
+- [x] Add Phaser configuration constants
+- [x] Add obstacle definitions
+- [x] Add helper functions (getRandomStartingCity, generateRouteSegments, etc.)
+
+**3.2 City Reveal Screen (Auto-Advance)**
+- [ ] Random city from 10 cities
+- [ ] Display city name, emoji, region, distance
+- [ ] Show destination (LCS/VCT)
+- [ ] Auto-advance after 3 seconds
+- [ ] "GET READY" countdown
+
+**3.3 Phaser Racing Game** ⭐ CORE
+- [ ] Phaser canvas in React
+- [ ] Pseudo-3D road (OutRun style)
+- [ ] Default vehicle: Car
+- [ ] Left/Right on-screen buttons
+- [ ] Boost button (costs 10 credits)
+- [ ] Obstacle spawning based on road type
+- [ ] Collision & speed reduction
+- [ ] Progress bar & timer
+- [ ] Road type indicator in HUD
+
+**3.4 Pit Stop Screen**
+- [ ] "Segment Complete" celebration
+- [ ] Show NEXT segment's road type
+- [ ] Vehicle recommendation
+- [ ] Vehicle switch option (with costs)
+- [ ] Auto-continue timer (5 seconds)
+
+**3.5 Segment Loop**
+- [ ] Track current segment (1, 2, 3)
+- [ ] Racing → Pit Stop → Racing loop
+- [ ] Detect journey completion
+
+**3.6 Results Screen + Journey Map** ⭐ NEW
+- [ ] Score calculation & display
+- [ ] **Journey Map Component:**
+  - Starting city → Waypoints → Destination
+  - Animated route line
+  - Cartoon/stylized map
+- [ ] Save to profile
+- [ ] Play Again / Home buttons
 
 ---
 
@@ -163,123 +230,74 @@
 
 ---
 
-## v3.0 — Phaser Racing Game (Task Breakdown)
+### January 23, 2026 (Day 3) — MAJOR DESIGN REVISION
 
-> **Full Details:** See [GAME_MECHANICS.md](./GAME_MECHANICS.md) for complete game design
+**Session 1: Design Discussion**
+- [x] Reviewed v3.0 status — identified "form filling" problem
+- [x] Discussed Phaser.js racing approach
+- [x] Reviewed Phaser Driving example (https://moonsault.itch.io/phaser-driving)
+- [x] Changed terrain types → road types (more intuitive)
+- [x] Updated vehicles (removed water/air, added road vehicles)
+- [x] Finalized on-screen controls (arrow buttons + boost)
 
-### Current Status: ⏳ In Progress
+**Session 2: Flow Simplification** ⭐ KEY DECISIONS
+- [x] **MAJOR CHANGE:** Reduced screens before racing from 5+ to 1 tap!
+- [x] **MAJOR CHANGE:** Vehicle selection moved to Pit Stops (mid-game)
+- [x] **MAJOR CHANGE:** Map view moved to END (victory screen, not setup)
+- [x] **MAJOR CHANGE:** Route difficulty auto-assigned (no player selection)
 
-| Phase | Task | Status |
-|-------|------|--------|
-| 3.1 | Game Data Architecture | ⏳ Pending |
-| 3.2 | Destination Selection Screen | ⏳ Pending |
-| 3.3 | City Reveal Screen | ⏳ Pending |
-| 3.4 | Map View (Route Selection) | ⏳ Pending |
-| 3.5 | Segment Breakdown Screen | ⏳ Pending |
-| 3.6 | Vehicle Selection (Per Segment) | ⏳ Pending |
-| 3.7 | Phaser Racing Game | ⏳ Pending |
-| 3.8 | Segment Loop & Map Progress | ⏳ Pending |
-| 3.9 | Results Screen | ⏳ Pending |
+**What Changed:**
+| Before | After |
+|--------|-------|
+| Home → Destination → City → Route Select → Vehicle Select → Racing | Home → Tap Destination → City (3s) → Racing |
+| 5+ screens to start | 1 tap to start |
+| Pre-select vehicle | Default Car, switch at Pit Stops |
+| Map before racing | Journey Map at END (victory!) |
+| Player picks route difficulty | Auto-assigned (moderate) |
 
-### Phase Details:
+**Rationale:**
+- Booth environment = short attention spans
+- Every extra screen = friction = players walk away
+- Vehicle selection is strategic, but upfront it's confusing
+- Map at end is a REWARD, not a setup chore
 
-**3.1 Game Data Architecture**
-- [ ] Update gameData.js with new vehicles (Bike, Car, Tractor, Truck, Sports Car)
-- [ ] Add road types (Highway, Tar Road, Mud Road, Bumpy Road)
-- [ ] Create route generation logic
-- [ ] Define vehicle-road speed relationships
-
-**3.2 Destination Selection**
-- [ ] LCS vs VCT picker screen
-
-**3.3 City Reveal**
-- [ ] Random city from 10 cities
-- [ ] Display city name, distance
-
-**3.4 Map View (Route Selection)**
-- [ ] Cartoon world map (React + SVG/Canvas)
-- [ ] 3 route options with waypoints
-- [ ] Points multiplier display (1.0x, 1.2x, 1.5x)
-
-**3.5 Segment Breakdown**
-- [ ] Show 3 segments after route selection
-- [ ] Display waypoints and road types
-
-**3.6 Vehicle Selection**
-- [ ] 5 vehicles with GOOD/SLOW/BAD hints
-- [ ] Credits tracking
-
-**3.7 Phaser Racing Game** ⭐ Core
-- [ ] Phaser canvas in React
-- [ ] Pseudo-3D road (OutRun style)
-- [ ] Vehicle sprite
-- [ ] Left/Right on-screen buttons
-- [ ] Obstacle spawning & collision
-- [ ] Speed reduction on hit
-- [ ] Boost button (costs credits)
-- [ ] Progress bar & timer
-
-**3.8 Segment Loop**
-- [ ] Return to map after segment
-- [ ] Show completed segments
-- [ ] Loop 3 times
-
-**3.9 Results Screen**
-- [ ] Score calculation
-- [ ] Journey summary
-- [ ] Save to profile
-
----
-
-### January 23, 2026 (Day 3)
-
-**Design Finalized:**
-- [x] Decided: Phaser.js for racing (not SVG animations)
-- [x] Decided: Road types instead of water/land terrain
-- [x] Decided: 5 road-appropriate vehicles (Bike, Car, Tractor, Truck, Sports Car)
-- [x] Decided: 4 road types (Highway, Tar Road, Mud Road, Bumpy Road)
-- [x] Decided: On-screen arrow buttons for controls (not tilt or touch sides)
-- [x] Decided: Booster cost TBD after testing
-- [x] Decided: Skill-based racing with obstacles
-- [x] Decided: Dynamic waypoints based on starting city
-- [x] Decided: Route distance affects points (longer = more points)
-- [x] Updated GAME_MECHANICS.md with complete design
-- [x] Updated PLANNING.md with v3.0 phase breakdown
-- [x] Updated PROGRESS.md with new task structure
-
-**Key Design Decisions (Jan 23):**
-| Decision | Choice | Reason |
-|----------|--------|--------|
-| Game engine | Phaser.js | Real game feel, not form filling |
-| Terrain → Road types | Highway, Tar, Mud, Bumpy | More intuitive for racing |
-| Vehicles | 5 road vehicles | Matches road types |
-| Controls | On-screen buttons | No accidental swipes |
-| Racing style | Pseudo-3D (OutRun) | Reference: Phaser Driving example |
+**Session 3: Documentation & Code**
+- [x] Updated GAME_MECHANICS.md with simplified flow
+- [x] Added Pit Stop system design
+- [x] Added Journey Map (end screen) design
+- [x] Updated game duration target: ~2 minutes
+- [x] Updated gameData.js with:
+  - New vehicles (Bike, Car, Tractor, Truck, Sports Car)
+  - Road types (Highway, Tar, Mud, Bumpy)
+  - Vehicle-road speed matrix
+  - Route difficulties
+  - Phaser config constants
+  - Obstacle definitions
+  - Helper functions
+- [x] Updated GameScreen.jsx placeholder with new data
+- [x] Updated PLANNING.md with revised phases
+- [x] Updated PROGRESS.md (this file)
 
 **Next Session:**
-- Start Phase 3.1: Game Data Architecture
-- Update gameData.js with new vehicles and roads
+- Start Phase 3.2: City Reveal Screen (Auto-Advance)
+- Implement 3-second countdown to racing
 
 ---
 
 ## Key Decisions Log
 
-| Date | Decision | Reason |
-|------|----------|--------|
-| Jan 21 | Browser-based (not native app) | No install friction, QR → instant play |
-| Jan 21 | Firebase for backend | Real-time leaderboard, free tier, fast setup |
-| Jan 21 | Avatar as secret (not password) | Fun, memorable, fast registration |
-| Jan 21 | 5 avatar categories × 10 each | 50 unique avatars per name |
-| Jan 21 | Credits + Score (dual currency) | Prevents stuck players, adds strategy |
-| Jan 21 | Chennai as starting city | Developer's hometown 🎉 |
-| Jan 23 | Phaser.js for racing game | Real game feel, not just form filling |
-| Jan 23 | Road types (not water/land terrain) | More intuitive for racing game |
-| Jan 23 | 5 road vehicles | Bike, Car, Tractor, Truck, Sports Car |
-| Jan 23 | 4 road types | Highway, Tar Road, Mud Road, Bumpy Road |
-| Jan 23 | On-screen arrow buttons | No accidental swipes, clear visibility |
-| Jan 23 | Skill-based racing with obstacles | Player controls, avoids obstacles, uses boost |
-| Jan 23 | Longer route = more points | Risk/reward for route selection |
-| Jan 23 | Booster cost TBD | Decide after testing game balance |
+| Date | Decision | Before | After | Reason |
+|------|----------|--------|-------|--------|
+| Jan 21 | Platform | Native app | Browser-based | No install friction |
+| Jan 21 | Auth | Password | Avatar as secret | Fun, memorable, fast |
+| Jan 21 | Backend | Custom server | Firebase | Real-time, free tier |
+| Jan 23 | Terrain | Water/Land | Road types | More intuitive |
+| Jan 23 | Game engine | SVG animations | Phaser.js | Real game feel |
+| Jan 23 | Controls | Tilt/swipe | On-screen buttons | No accidents |
+| **Jan 23** | **Screens before racing** | **5+ screens** | **1 tap** | **Reduce friction** |
+| **Jan 23** | **Vehicle selection** | **Before racing** | **Pit Stop mid-game** | **Strategic, not confusing** |
+| **Jan 23** | **Map view** | **Before racing** | **After (results)** | **Victory reward** |
+| **Jan 23** | **Route selection** | **Player picks** | **Auto (moderate)** | **Faster start** |
 
 ---
 
@@ -313,7 +331,7 @@ Rush2C9/
 │   ├── services/           ← Firebase & API
 │   ├── utils/              ← Helper functions
 │   ├── data/               ← Game constants
-│   │   └── gameData.js     ← Cities, vehicles, avatars
+│   │   └── gameData.js     ← Cities, vehicles, roads, obstacles
 │   ├── assets/             ← Images & sounds
 │   ├── App.jsx             ← Main app with routing
 │   ├── main.jsx            ← Entry point
@@ -347,12 +365,12 @@ Rush2C9/
 ### Our Game Concept
 Rush2C9 — Fans race from random cities worldwide to reach Cloud9's arenas (LCS or VCT). They choose routes and vehicles, balancing speed vs cost. Creates competition via leaderboard and head-to-head duels with score betting.
 
-### Key Design Decisions
-1. **Browser-based** — No app install, scan QR → play instantly
-2. **Avatar as PIN** — Fun, memorable, replaces password (NEVER shown publicly)
-3. **Dual currency** — Credits (per game) + Score (permanent leaderboard)
-4. **Faction war** — LCS vs VCT creates community rivalry
-5. **Touch-friendly** — Designed for phones at loud event booths
+### Key Design Principles (Updated Jan 23)
+1. **1 tap to start** — Minimal screens before racing
+2. **Default vehicle** — Start with Car, switch at Pit Stops
+3. **Journey Map at END** — Victory celebration, not setup
+4. **Auto route difficulty** — System handles, player races
+5. **~2 minute games** — Perfect for booth environment
 
 ---
 
