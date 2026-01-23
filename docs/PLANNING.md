@@ -177,28 +177,108 @@ The booth's big screen shows:
 
 ---
 
-## Milestones & Timeline
+## Development Roadmap
 
-### Week 1 (Jan 21-27)
-- [x] Finalize game concept
-- [ ] Complete documentation
-- [ ] Setup project structure
-- [ ] Init Git repository
-- [ ] Build registration screen
-- [ ] Build game map & routes
+> **Current Status:** See [PROGRESS.md](./PROGRESS.md) for daily updates
 
-### Week 2 (Jan 28 - Feb 2)
-- [ ] Complete game logic
-- [ ] Setup Firebase
-- [ ] Implement leaderboard
-- [ ] Add duel system
-- [ ] Cloud9 theming & polish
-- [ ] Testing
+### Milestone Overview
 
-### Feb 3 (Deadline Day)
-- [ ] Record demo video
-- [ ] Final testing
-- [ ] Submit to Devpost
+| Version | Name | What It Delivers | Status |
+|---------|------|------------------|--------|
+| v0.0 | Documentation | Project plan, game mechanics, Git strategy | ✅ Complete |
+| v1.0 | Setup | React + Vite + Tailwind + folder structure | ✅ Complete |
+| v2.0 | Registration | Create account, login, logout, protected routes | ✅ Complete |
+| v3.0 | Gameplay | Full solo game: city → routes → vehicles → score | ✅ Complete |
+| v4.0 | Leaderboard | View rankings, faction totals, personal stats | ⏳ Pending |
+| v5.0 | Firebase | Cloud sync, real-time leaderboard, data persistence | ⏳ Pending |
+| v6.0 | Duels | Challenge players, bet scores, same starting city | ⏳ Pending |
+| v7.0 | Big Screen | Booth display mode for live events | ⏳ Pending |
+| v8.0 | Polish | Cloud9 branding, animations, sound effects | ⏳ Pending |
+| v9.0 | Release | Final testing, demo video, Devpost submission | ⏳ Pending |
+
+---
+
+### v0.0 — Documentation
+- [x] PLANNING.md — Project overview, features, decisions
+- [x] GAME_MECHANICS.md — Scoring, vehicles, routes
+- [x] PROGRESS.md — Daily log, status tracking
+- [x] GIT_STRATEGY.md — Commit and tag conventions
+- [x] README.md — Project introduction
+
+### v1.0 — Setup
+- [x] Initialize React + Vite project
+- [x] Configure Tailwind CSS v4
+- [x] Install Phaser.js and React Router
+- [x] Create folder structure (screens, services, data, etc.)
+- [x] Create placeholder screens
+- [x] Add game data constants (cities, vehicles, avatars)
+
+### v2.0 — Registration
+- [x] Registration screen (name + avatar selection)
+- [x] Login screen (name + avatar validation)
+- [x] localStorage persistence (multi-player support)
+- [x] Protected routes (redirect if not logged in)
+- [x] Switch account / delete account
+
+### v3.0 — Gameplay
+- [x] Game state machine (5 phases)
+- [x] Random city assignment with animation
+- [x] Route selection (3 options per segment)
+- [x] Vehicle selection (5 vehicles with terrain hints)
+- [x] Travel time calculation
+- [x] 3-segment journey loop
+- [x] Results screen with score breakdown
+- [x] Save score and faction to player profile
+
+### v4.0 — Leaderboard
+- [ ] Leaderboard screen with top players
+- [ ] Faction totals (LCS vs VCT)
+- [ ] Personal stats (games played, best score)
+- [ ] Sort by score, filter by faction
+
+### v5.0 — Firebase
+- [ ] Setup Firebase project
+- [ ] Migrate player data to Firestore
+- [ ] Real-time leaderboard updates
+- [ ] Cloud sync across devices
+
+### v6.0 — Duels
+- [ ] Challenge another player by name
+- [ ] Both players get same starting city
+- [ ] Bet scores against each other
+- [ ] Winner takes bet amount
+- [ ] Duel history
+
+### v7.0 — Big Screen
+- [ ] Booth display mode (no registration needed)
+- [ ] Live leaderboard view
+- [ ] Faction war progress bar
+- [ ] QR code display for joining
+- [ ] Active duels ticker
+
+### v8.0 — Polish
+- [ ] Cloud9 brand colors and logo
+- [ ] Smooth animations and transitions
+- [ ] Sound effects (optional)
+- [ ] Loading states and error handling
+- [ ] Mobile responsiveness fine-tuning
+
+### v9.0 — Release
+- [ ] End-to-end testing on multiple devices
+- [ ] Record 3-minute demo video
+- [ ] Make GitHub repo public
+- [ ] Complete Devpost submission form
+- [ ] Final code cleanup
+
+---
+
+### Timeline
+
+| Week | Dates | Focus |
+|------|-------|-------|
+| Week 1 | Jan 21-27 | v0.0 → v3.0 (Docs, Setup, Registration, Gameplay) |
+| Week 2 | Jan 28 - Feb 2 | v4.0 → v8.0 (Leaderboard, Firebase, Duels, Polish) |
+| Deadline | Feb 3, 11:00 AM PT | v9.0 (Submit!) |
 
 ---
 

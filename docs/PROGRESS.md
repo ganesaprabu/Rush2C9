@@ -22,14 +22,22 @@
 
 ## Project Status
 
-| Milestone | Status | Tag |
-|-----------|--------|-----|
-| Documentation & Setup | ✅ Complete | v0.0-docs |
-| React + Vite Setup | ✅ Complete | v1.0-setup |
-| Registration Screen | ⏳ Pending | v2.0-registration |
-| Core Gameplay | ⏳ Pending | v3.0-gameplay |
-| Multiplayer Features | ⏳ Pending | v4.0-multiplayer |
-| Final Release | ⏳ Pending | v5.0-release |
+> **Full Roadmap:** See [PLANNING.md → Development Roadmap](./PLANNING.md#development-roadmap) for detailed breakdown
+
+| Version | Milestone | Status | Tag |
+|---------|-----------|--------|-----|
+| v0.0 | Documentation | ✅ Complete | v0.0-docs |
+| v1.0 | Setup | ✅ Complete | v1.0-setup |
+| v2.0 | Registration | ✅ Complete | v2.0-registration |
+| v3.0 | Gameplay | ✅ Complete | — |
+| v4.0 | Leaderboard | ⏳ Pending | — |
+| v5.0 | Firebase | ⏳ Pending | — |
+| v6.0 | Duels | ⏳ Pending | — |
+| v7.0 | Big Screen | ⏳ Pending | — |
+| v8.0 | Polish | ⏳ Pending | — |
+| v9.0 | Release | ⏳ Pending | — |
+
+**Current Focus:** v3.0 complete → Test & tag → Start v4.0
 
 ---
 
@@ -39,7 +47,7 @@
 |------|--------|
 | **Submission Deadline** | February 3, 2026 @ 11:00 AM PT |
 | **Your Time (IST)** | February 4, 2026 @ 12:30 AM |
-| **Days Remaining** | ~13 days |
+| **Days Remaining** | ~12 days |
 
 ### Before Submission Checklist
 - [ ] Make GitHub repo **PUBLIC**
@@ -133,10 +141,74 @@
 ### January 22, 2026 (Day 2)
 
 **Completed:**
-- [ ] (To be filled)
+- [x] Created playerService.js with localStorage helpers
+- [x] Support for multiple players on same device
+- [x] Registration with name (A-Z only, uppercase) + avatar
+- [x] Login with name + avatar validation
+- [x] Switch account (logout without deleting data)
+- [x] Delete account functionality
+- [x] Protected routes (redirect to register if not logged in)
+- [x] Auto-redirect from splash based on login state
+- [x] Display full name on home screen
+- [x] Button text: "Create Account" (register) / "Sign In" (login)
+- [x] Input validation: A-Z only, auto-uppercase
 
-**Next:**
-- [ ] (To be filled)
+**Key Decisions:**
+- Multiple players stored in `rush2c9_players` (persists)
+- Current session in `rush2c9_current` (cleared on logout)
+- Player ID format: `firstname_lastname` (lowercase)
+- Avatar stored as `avatarCategory` + `avatarIndex` (not emoji)
+
+**Tagged:** v2.0-registration ✅
+
+---
+
+## v3.0-gameplay — Task Breakdown
+
+| Phase | Task | Status | Description |
+|-------|------|--------|-------------|
+| 3.1 | Game state setup | ✅ Complete | Create game flow states (city reveal → route → vehicle → results) |
+| 3.2 | Random city assignment | ✅ Complete | Show starting city with animation |
+| 3.3 | Route selection UI | ✅ Complete | Display 3 routes with distance & terrain % |
+| 3.4 | Vehicle selection UI | ✅ Complete | Display 5 vehicles with cost, show remaining credits |
+| 3.5 | Travel time calculation | ✅ Complete | Calculate time based on terrain + vehicle speed |
+| 3.6 | Segment loop | ✅ Complete | Repeat route → vehicle for 3 segments |
+| 3.7 | Results screen | ✅ Complete | Show score breakdown (base + time bonus + credits saved) |
+| 3.8 | Save score & faction | ✅ Complete | Update player data in localStorage |
+
+---
+
+### January 22, 2026 (Day 2 - Session 2)
+
+**Completed:**
+- [x] Implemented complete game state machine with 5 phases:
+  - `city_reveal` — Random city assignment with animation
+  - `route_select` — Display 3 route options per segment
+  - `vehicle_select` — Display 5 vehicles with terrain suitability hints
+  - `traveling` — Brief travel animation between segments
+  - `results` — Score breakdown with journey summary
+- [x] Route generation based on city distance and segment number
+- [x] Terrain distribution: Direct (60-90% water), Scenic (30-60%), Safe (10-30%)
+- [x] Vehicle selection with "Good fit" indicator based on terrain
+- [x] Travel time calculation: `distance / (100 × speed)`
+- [x] 3-segment journey loop with progress bar
+- [x] Journey log tracking all segment choices
+- [x] Score calculation: Base (500) + Time Bonus (300 - travel time) + Credits Saved
+- [x] Save score to player profile after game completion
+- [x] Faction tracking (LCS vs VCT) set on first game
+- [x] Added `updatePlayerScore()` to playerService.js
+- [x] Back button to change route before vehicle selection
+
+**Key Implementation Details:**
+- Game phases managed via React state machine
+- Routes generated dynamically per segment with randomized terrain
+- Time formula: `landDist/(100×landSpeed) + waterDist/(100×waterSpeed)`
+- Score persists to localStorage via playerService
+
+**Next Session:**
+- Test complete gameplay flow on device
+- Tag as v3.0-gameplay after testing
+- Begin v4.0-multiplayer (leaderboard, duels)
 
 ---
 
