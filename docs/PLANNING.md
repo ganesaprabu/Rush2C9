@@ -188,7 +188,7 @@ The booth's big screen shows:
 | v0.0 | Documentation | Project plan, game mechanics, Git strategy | ✅ Complete |
 | v1.0 | Setup | React + Vite + Tailwind + folder structure | ✅ Complete |
 | v2.0 | Registration | Create account, login, logout, protected routes | ✅ Complete |
-| v3.0 | Gameplay | Full solo game: city → routes → vehicles → score | ✅ Complete |
+| v3.0 | Gameplay | Map view + Phaser racing game + scoring | ⏳ In Progress |
 | v4.0 | Leaderboard | View rankings, faction totals, personal stats | ⏳ Pending |
 | v5.0 | Firebase | Cloud sync, real-time leaderboard, data persistence | ⏳ Pending |
 | v6.0 | Duels | Challenge players, bet scores, same starting city | ⏳ Pending |
@@ -198,14 +198,14 @@ The booth's big screen shows:
 
 ---
 
-### v0.0 — Documentation
+### v0.0 — Documentation ✅
 - [x] PLANNING.md — Project overview, features, decisions
 - [x] GAME_MECHANICS.md — Scoring, vehicles, routes
 - [x] PROGRESS.md — Daily log, status tracking
 - [x] GIT_STRATEGY.md — Commit and tag conventions
 - [x] README.md — Project introduction
 
-### v1.0 — Setup
+### v1.0 — Setup ✅
 - [x] Initialize React + Vite project
 - [x] Configure Tailwind CSS v4
 - [x] Install Phaser.js and React Router
@@ -213,22 +213,73 @@ The booth's big screen shows:
 - [x] Create placeholder screens
 - [x] Add game data constants (cities, vehicles, avatars)
 
-### v2.0 — Registration
+### v2.0 — Registration ✅
 - [x] Registration screen (name + avatar selection)
 - [x] Login screen (name + avatar validation)
 - [x] localStorage persistence (multi-player support)
 - [x] Protected routes (redirect if not logged in)
 - [x] Switch account / delete account
 
-### v3.0 — Gameplay
-- [x] Game state machine (5 phases)
-- [x] Random city assignment with animation
-- [x] Route selection (3 options per segment)
-- [x] Vehicle selection (5 vehicles with terrain hints)
-- [x] Travel time calculation
-- [x] 3-segment journey loop
-- [x] Results screen with score breakdown
-- [x] Save score and faction to player profile
+### v3.0 — Gameplay (Phaser Racing Game) ⏳
+
+> **Full details:** See [GAME_MECHANICS.md](./GAME_MECHANICS.md)
+
+#### Phase 3.1: Game Data Architecture
+- [ ] Update gameData.js with new vehicles (Bike, Car, Tractor, Truck, Sports Car)
+- [ ] Add road types (Highway, Tar Road, Mud Road, Bumpy Road)
+- [ ] Create route generation logic (city → waypoints → LA)
+- [ ] Define vehicle-road speed relationships
+
+#### Phase 3.2: Destination Selection Screen
+- [ ] LCS vs VCT picker (large touch-friendly cards)
+- [ ] Faction selection affects faction war totals
+
+#### Phase 3.3: City Reveal Screen
+- [ ] Random city assignment from 10 cities
+- [ ] Display city name, region, distance to LA
+- [ ] "Start Journey" button
+
+#### Phase 3.4: Map View (Route Selection)
+- [ ] Cartoon world map component (React + SVG/Canvas)
+- [ ] Show 3 route options with different waypoints
+- [ ] Display road types and distances per route
+- [ ] Route cards with points multiplier (1.0x, 1.2x, 1.5x)
+
+#### Phase 3.5: Segment Breakdown Screen
+- [ ] Show 3 segments after route selection
+- [ ] Display waypoint cities and road types
+- [ ] "Select Vehicle" button for each segment
+
+#### Phase 3.6: Vehicle Selection (Per Segment)
+- [ ] 5 vehicles with costs and road hints
+- [ ] GOOD/SLOW/BAD indicators based on road type
+- [ ] Confirm button (not auto-select)
+- [ ] Credits tracking
+
+#### Phase 3.7: Phaser Racing Game
+- [ ] Initialize Phaser canvas in React
+- [ ] Pseudo-3D road rendering (OutRun style)
+- [ ] Vehicle sprite on road
+- [ ] Left/Right steering with on-screen buttons
+- [ ] Obstacle spawning and collision detection
+- [ ] Speed reduction on obstacle hit
+- [ ] Gradual speed recovery
+- [ ] Boost button (costs credits)
+- [ ] Progress bar and timer
+- [ ] Segment completion detection
+
+#### Phase 3.8: Segment Loop & Map Progress
+- [ ] Return to map after segment completion
+- [ ] Show completed segments on map
+- [ ] Progress indicator (1/3, 2/3, 3/3)
+- [ ] Loop through all 3 segments
+
+#### Phase 3.9: Results Screen
+- [ ] Score calculation (base + distance bonus + time bonus + credits saved)
+- [ ] Journey summary with all segments
+- [ ] Save score to player profile
+- [ ] Update faction totals
+- [ ] Play Again / Home buttons
 
 ### v4.0 — Leaderboard
 - [ ] Leaderboard screen with top players

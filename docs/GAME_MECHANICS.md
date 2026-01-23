@@ -2,55 +2,556 @@
 
 ## Overview
 
-Rush2C9 is a strategic racing game where fans travel from a random starting city to their chosen Cloud9 arena (LCS or VCT). Players must balance speed vs cost by choosing optimal routes and vehicles.
+Rush2C9 is a **skill-based racing game** where fans travel from a random starting city to their chosen Cloud9 arena (LCS or VCT). The game combines **strategic route/vehicle selection** with **Phaser.js racing gameplay**.
 
 ---
 
-## Core Game Concept (The Original Vision)
+## Game Vision (Finalized)
 
-### The Idea
+### Two Distinct Experiences
 
-The game is **map-based** where:
-1. Fans start from a random city somewhere in the world
-2. They must travel to one of 2 Cloud9 arenas (LCS or VCT)
-3. The journey is divided into 3 segments
-4. For each segment, fan chooses a **route** (affects distance & terrain)
-5. For each segment, fan chooses a **vehicle** (costs credits, affects speed)
-6. **Wrong vehicle on wrong terrain = SLOW** (bike on ocean = very slow!)
-7. **Right vehicle on right terrain = FAST** (ship on water = fast!)
-8. Goal: Reach the arena as fast as possible while managing credits
+| Mode | Technology | Purpose |
+|------|------------|---------|
+| **Map Mode** | React + SVG/Canvas | Route selection, progress tracking |
+| **Racing Mode** | Phaser.js | Actual gameplay — drive, avoid obstacles, race! |
 
-### The Strategy
+### The Core Loop
 
-| Choice | Trade-off |
-|--------|-----------|
-| Plane (100 credits) | Very fast everywhere, but expensive |
-| Ship (60 credits) | Fast on water, slow on land |
-| Car (40 credits) | Fast on land, useless on water |
-| Bike (20 credits) | Cheap but slow everywhere |
-
-**The skill:** Choosing the right vehicle for each terrain type while managing your 200 credit budget!
+```
+1. Choose Destination (LCS or VCT)
+         ↓
+2. Random Starting City Revealed (e.g., Chennai)
+         ↓
+3. MAP VIEW: See 3 route options on cartoon world map
+         ↓
+4. Select route → See 3 segments breakdown
+   Example: Chennai → Dubai → Germany → LA
+         ↓
+5. RACING GAME (Phaser.js) — Segment 1
+   - Player controls vehicle
+   - Avoid obstacles on the road
+   - Complete segment → Back to MAP
+         ↓
+6. MAP shows Segment 1 complete ✓
+         ↓
+7. RACING GAME — Segment 2
+         ↓
+8. MAP shows Segment 2 complete ✓
+         ↓
+9. RACING GAME — Segment 3
+         ↓
+10. RESULTS: Score breakdown, journey summary
+```
 
 ---
 
-## Visual Design
+## Road Types (Replaces Terrain)
 
-### Map Style: 2D Playful/Cartoon
+> **Decision:** We use road types instead of water/land terrain. This is simpler and more intuitive for a racing game.
 
-- **NOT** realistic geography — simplified, stylized world map
-- **Bright, colorful** — matches energetic booth environment
-- **Playful icons** — cartoon vehicles, fun city markers
-- **Cloud9 blue theme** — brand colors throughout
-- **Touch-friendly** — big buttons, clear visuals
+| Road Type | Visual | Description | Best Vehicle |
+|-----------|--------|-------------|--------------|
+| **Highway** | 🛣️ | Smooth, fast, wide lanes | Sports Car 🏎️ |
+| **Tar Road** | 🛤️ | Normal paved road | Car 🚗 |
+| **Mud Road** | 🟤 | Wet, slippery, slow | Tractor 🚜 |
+| **Bumpy Road** | 🪨 | Rocky, uneven surface | Truck 🛻 |
 
-### Why Cartoon Style?
+### Road-Vehicle Relationship
 
-| Real Map | Cartoon Map ✅ |
-|----------|---------------|
-| Complex, cluttered | Clean, readable |
-| Serious tone | Fun, playful tone |
-| Hard to see on phone | Easy to see on phone |
-| Doesn't match booth vibe | Matches LCS/VCT energy |
+| Road Type | 🚲 Bike | 🚗 Car | 🚜 Tractor | 🛻 Truck | 🏎️ Sports Car |
+|-----------|---------|--------|------------|----------|---------------|
+| Highway | ⚠️ Slow | ✅ Good | ⚠️ Slow | ⚠️ Slow | ✅ BEST |
+| Tar Road | ✅ Good | ✅ BEST | ⚠️ Slow | ✅ Good | ✅ Good |
+| Mud Road | ❌ Bad | ⚠️ Slow | ✅ BEST | ✅ Good | ❌ Bad |
+| Bumpy Road | ⚠️ Slow | ❌ Bad | ✅ Good | ✅ BEST | ❌ Bad |
+
+**Key insight:** Wrong vehicle on wrong road = SLOW. Right vehicle = FAST!
+
+---
+
+## Vehicles (Updated)
+
+| Vehicle | Emoji | Cost | Best For | Speed Multiplier |
+|---------|-------|------|----------|------------------|
+| Bike | 🚲 | 20 💳 | Tar Road (budget option) | 1.0x base |
+| Car | 🚗 | 40 💳 | Tar Road, Highway | 1.5x on tar/highway |
+| Tractor | 🚜 | 50 💳 | Mud Road | 2.0x on mud |
+| Truck | 🛻 | 60 💳 | Bumpy Road | 2.0x on bumpy |
+| Sports Car | 🏎️ | 100 💳 | Highway (fastest) | 2.5x on highway |
+
+### Vehicle Selection Strategy
+
+| Situation | Best Choice | Why |
+|-----------|-------------|-----|
+| Highway segment | Sports Car 🏎️ | Fastest, worth the cost |
+| Tar road segment | Car 🚗 | Good speed, reasonable cost |
+| Mud road segment | Tractor 🚜 | Only vehicle that handles mud well |
+| Bumpy road segment | Truck 🛻 | Designed for rough terrain |
+| Low on credits | Bike 🚲 | Cheap, works OK on tar road |
+
+---
+
+## Racing Mechanics (Phaser.js)
+
+### Controls
+
+> **Decision:** On-screen arrow buttons (Option C) — clear, visible, no accidental swipes.
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│           [RACING GAME VIEW]            │
+│                                         │
+│         Road with obstacles             │
+│         Vehicle in center               │
+│                                         │
+│   ┌───────┐               ┌───────┐    │
+│   │   ◀   │               │   ▶   │    │
+│   │ LEFT  │               │ RIGHT │    │
+│   └───────┘               └───────┘    │
+│                                         │
+│            ┌─────────────┐              │
+│            │  🚀 BOOST   │              │
+│            │   (cost 💳) │              │
+│            └─────────────┘              │
+└─────────────────────────────────────────┘
+```
+
+### Gameplay Elements
+
+| Element | Description |
+|---------|-------------|
+| **Steering** | Left/Right buttons to move vehicle |
+| **Obstacles** | Rocks, potholes, barriers, other vehicles on road |
+| **Collision** | Hit obstacle → speed slows down (doesn't stop), gradually recovers |
+| **Booster** | Tap button → temporary speed increase, costs credits |
+| **Finish Line** | Complete segment distance to finish |
+
+### Obstacle Behavior
+
+| Event | Effect |
+|-------|--------|
+| Hit obstacle | Speed reduces by 30-50% |
+| Recovery | Speed gradually returns to normal over 2-3 seconds |
+| Multiple hits | Each hit slows you down again |
+| Clean run | Maintain top speed, faster completion |
+
+### Booster System
+
+| Property | Value |
+|----------|-------|
+| Cost | TBD (decide after testing) |
+| Duration | 2-3 seconds |
+| Speed increase | +50% temporary boost |
+| Cooldown | 3 seconds between boosts |
+| Strategy | Use for final stretch or to recover from obstacle hit |
+
+---
+
+## Route System
+
+### Route Selection on Map
+
+When player sees the map, they see 3 route options:
+
+| Route | Distance | Road Types | Points Multiplier |
+|-------|----------|------------|-------------------|
+| **Short Route** | Less km | Harder roads (mud, bumpy) | 1.0x |
+| **Medium Route** | Medium km | Mixed roads | 1.2x |
+| **Long Route** | More km | Easier roads (tar, highway) | 1.5x |
+
+> **Scoring Logic:** Longer route = more points, but takes more time. Risk/reward!
+
+### Segment Breakdown
+
+After selecting a route, it breaks into 3 segments with waypoints:
+
+**Example (Chennai → LCS Arena via Long Route):**
+```
+Segment 1: Chennai → Dubai (Highway)
+Segment 2: Dubai → Berlin (Tar Road)
+Segment 3: Berlin → Los Angeles (Highway)
+```
+
+### Dynamic Waypoints
+
+- Starting city is **random** (1 of 10 cities)
+- Waypoints are **generated dynamically** based on starting city
+- Creates unique journey each game
+- Same route type will have different waypoints based on origin
+
+---
+
+## Game Flow (Detailed)
+
+### Phase 1: Destination Selection
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│            ☁️ RUSH2C9                   │
+│                                         │
+│       Choose Your Destination           │
+│                                         │
+│   ┌───────────┐     ┌───────────┐      │
+│   │   🎮 LCS  │     │   🎯 VCT  │      │
+│   │   ARENA   │     │   ARENA   │      │
+│   │           │     │           │      │
+│   │  League   │     │ VALORANT  │      │
+│   └───────────┘     └───────────┘      │
+│                                         │
+│      Which team do you support?         │
+└─────────────────────────────────────────┘
+```
+
+### Phase 2: City Reveal
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│         YOUR STARTING CITY              │
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │                             │      │
+│   │   🌏 CARTOON WORLD MAP      │      │
+│   │                             │      │
+│   │       ★ CHENNAI (pulsing)   │      │
+│   │                    🏁 LA    │      │
+│   │                             │      │
+│   └─────────────────────────────┘      │
+│                                         │
+│          📍 CHENNAI, INDIA              │
+│          Distance: 14,500 km            │
+│                                         │
+│          [ START JOURNEY ]              │
+└─────────────────────────────────────────┘
+```
+
+### Phase 3: Route Selection (Map View)
+
+```
+┌─────────────────────────────────────────┐
+│  Credits: 💳 200                        │
+│─────────────────────────────────────────│
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │                             │      │
+│   │   🌏 MAP with 3 routes      │      │
+│   │                             │      │
+│   │   ★ Chennai                 │      │
+│   │    ╲___Route A (short)      │      │
+│   │     ╲__Route B (medium)     │      │
+│   │      ╲_Route C (long)       │      │
+│   │                    🏁 LA    │      │
+│   └─────────────────────────────┘      │
+│                                         │
+│  ┌────────────────────────────────┐    │
+│  │ 🅰️ SHORT    8,000 km   1.0x pts │    │
+│  │    Mud → Bumpy → Tar           │    │
+│  └────────────────────────────────┘    │
+│                                         │
+│  ┌────────────────────────────────┐    │
+│  │ 🅱️ MEDIUM  10,500 km   1.2x pts │    │
+│  │    Tar → Mud → Highway         │    │
+│  └────────────────────────────────┘    │
+│                                         │
+│  ┌────────────────────────────────┐    │
+│  │ 🅲️ LONG    14,500 km   1.5x pts │    │
+│  │    Highway → Tar → Highway     │    │
+│  └────────────────────────────────┘    │
+└─────────────────────────────────────────┘
+```
+
+### Phase 4: Segment Breakdown
+
+After route selection, show the 3 segments:
+
+```
+┌─────────────────────────────────────────┐
+│  Route: LONG (14,500 km)   💳 200       │
+│─────────────────────────────────────────│
+│                                         │
+│   Your journey in 3 segments:           │
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │ Segment 1: Chennai → Dubai  │      │
+│   │ 🛣️ Highway | 4,800 km       │      │
+│   └─────────────────────────────┘      │
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │ Segment 2: Dubai → Berlin   │      │
+│   │ 🛤️ Tar Road | 5,200 km      │      │
+│   └─────────────────────────────┘      │
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │ Segment 3: Berlin → LA      │      │
+│   │ 🛣️ Highway | 4,500 km       │      │
+│   └─────────────────────────────┘      │
+│                                         │
+│   [ SELECT VEHICLE FOR SEGMENT 1 ]      │
+└─────────────────────────────────────────┘
+```
+
+### Phase 5: Vehicle Selection (Per Segment)
+
+```
+┌─────────────────────────────────────────┐
+│  Segment 1 of 3              💳 200     │
+│  Chennai → Dubai | 🛣️ Highway           │
+│─────────────────────────────────────────│
+│                                         │
+│  Choose your vehicle:                   │
+│                                         │
+│  ┌────────┐ ┌────────┐ ┌────────┐      │
+│  │   🚲   │ │   🚗   │ │   🚜   │      │
+│  │  Bike  │ │  Car   │ │Tractor │      │
+│  │ 20 💳  │ │ 40 💳  │ │ 50 💳  │      │
+│  │ ⚠️SLOW │ │ ✅GOOD │ │ ⚠️SLOW │      │
+│  └────────┘ └────────┘ └────────┘      │
+│                                         │
+│  ┌────────┐ ┌────────┐                 │
+│  │   🛻   │ │   🏎️   │                 │
+│  │ Truck  │ │ Sports │                 │
+│  │ 60 💳  │ │ 100💳  │                 │
+│  │ ⚠️SLOW │ │ ✅BEST │  ← Hints!       │
+│  └────────┘ └────────┘                 │
+│                                         │
+│        [ ← BACK ]    [ CONFIRM ]        │
+└─────────────────────────────────────────┘
+```
+
+### Phase 6: Racing Game (Phaser.js)
+
+```
+┌─────────────────────────────────────────┐
+│  Segment 1/3  Chennai→Dubai  💳 100     │
+│  ████████░░░░░░░░ 45%     ⏱️ 12.3s     │
+│─────────────────────────────────────────│
+│                                         │
+│           |     |     |                 │
+│           |  🪨 |     |                 │
+│           |     |     |                 │
+│     ------+-----+-----+------           │
+│           |     |     |                 │
+│           |     | 🏎️  |  ← Player      │
+│           |     |     |                 │
+│     ------+-----+-----+------           │
+│           |     |     |                 │
+│                                         │
+│   ┌─────┐             ┌─────┐          │
+│   │  ◀  │             │  ▶  │          │
+│   │LEFT │             │RIGHT│          │
+│   └─────┘             └─────┘          │
+│                                         │
+│          ┌──────────────┐               │
+│          │  🚀 BOOST    │               │
+│          └──────────────┘               │
+└─────────────────────────────────────────┘
+```
+
+**Racing Elements:**
+- Pseudo-3D road perspective (like Phaser Driving example)
+- Obstacles spawn and scroll toward player
+- Player steers left/right to avoid
+- Progress bar shows segment completion
+- Timer shows elapsed time
+- Boost button for temporary speed increase
+
+### Phase 7: Segment Complete → Back to Map
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│         ✅ SEGMENT 1 COMPLETE!          │
+│                                         │
+│         Chennai → Dubai                 │
+│         Time: 24.5 seconds              │
+│         Obstacles hit: 3                │
+│                                         │
+│   ┌─────────────────────────────┐      │
+│   │                             │      │
+│   │   🌏 MAP                    │      │
+│   │                             │      │
+│   │   ★ Chennai ──✓── Dubai     │      │
+│   │                    ↓        │      │
+│   │                  Berlin     │      │
+│   │                    ↓        │      │
+│   │                   LA 🏁     │      │
+│   └─────────────────────────────┘      │
+│                                         │
+│   Progress: [●●○] 1 of 3 complete       │
+│                                         │
+│   [ SELECT VEHICLE FOR SEGMENT 2 ]      │
+└─────────────────────────────────────────┘
+```
+
+### Phase 8: Results Screen
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│         🏁 JOURNEY COMPLETE! 🏁         │
+│                                         │
+│         Chennai → LCS Arena             │
+│                                         │
+│         ┌───────────────────┐          │
+│         │                   │          │
+│         │   YOUR SCORE      │          │
+│         │                   │          │
+│         │    ⭐ 785 ⭐      │          │
+│         │                   │          │
+│         └───────────────────┘          │
+│                                         │
+│  Score Breakdown:                       │
+│  ├── Base Points:      500              │
+│  ├── Distance Bonus:   +150 (1.5x)      │
+│  ├── Time Bonus:       +85              │
+│  └── Credits Saved:    +50              │
+│                                         │
+│  Journey Summary:                       │
+│  ├── Seg 1: 🏎️ Highway  → 24.5s        │
+│  ├── Seg 2: 🚗 Tar Road → 32.1s        │
+│  └── Seg 3: 🏎️ Highway  → 21.8s        │
+│                                         │
+│  Total Time: 78.4 seconds               │
+│  Obstacles Hit: 7                       │
+│                                         │
+│    [ 🏠 HOME ]    [ 🔄 PLAY AGAIN ]     │
+└─────────────────────────────────────────┘
+```
+
+---
+
+## Scoring System (Updated)
+
+### Score Calculation
+
+```
+FINAL SCORE = Base Points
+            + Distance Bonus (route multiplier)
+            + Time Bonus
+            + Credits Saved
+            - Obstacle Penalty (optional)
+
+Where:
+- Base Points: 500 (for completing journey)
+- Distance Bonus: Base × Route Multiplier (1.0x, 1.2x, or 1.5x)
+- Time Bonus: MAX(0, 300 - Total Travel Time in seconds)
+- Credits Saved: Unspent credits from 200 budget
+- Obstacle Penalty: TBD (optional, may remove for simplicity)
+```
+
+### Example Calculations
+
+**Scenario: Long route, fast completion, budget vehicles**
+- Route: Long (1.5x multiplier)
+- Total time: 78 seconds
+- Credits spent: 150 (used cheaper vehicles)
+- Score = 500 + (500 × 0.5) + (300 - 78) + (200 - 150)
+- Score = 500 + 250 + 222 + 50 = **1,022 pts**
+
+**Scenario: Short route, slow completion, expensive vehicles**
+- Route: Short (1.0x multiplier)
+- Total time: 120 seconds
+- Credits spent: 180 (used expensive vehicles on wrong roads)
+- Score = 500 + (500 × 0) + (300 - 120) + (200 - 180)
+- Score = 500 + 0 + 180 + 20 = **700 pts**
+
+---
+
+## Currency System
+
+### Two Currencies
+
+| Currency | Symbol | Purpose | Behavior |
+|----------|--------|---------|----------|
+| **Credits** | 💳 | Buy vehicles, use boosters | Refreshes each game (200 per game) |
+| **Score** | 🏆 | Leaderboard ranking | Accumulates permanently |
+
+### Credit Usage
+
+| Action | Cost |
+|--------|------|
+| Bike | 20 💳 |
+| Car | 40 💳 |
+| Tractor | 50 💳 |
+| Truck | 60 💳 |
+| Sports Car | 100 💳 |
+| Booster (per use) | TBD 💳 |
+
+---
+
+## Starting Cities (10)
+
+| # | City | Region | Distance to LA |
+|---|------|--------|----------------|
+| 1 | Tokyo | Asia | 8,800 km |
+| 2 | Seoul | Asia | 9,500 km |
+| 3 | Chennai | Asia | 14,500 km |
+| 4 | Dubai | Middle East | 13,400 km |
+| 5 | Sydney | Oceania | 12,000 km |
+| 6 | London | Europe | 8,800 km |
+| 7 | Paris | Europe | 9,100 km |
+| 8 | Berlin | Europe | 9,300 km |
+| 9 | São Paulo | South America | 9,900 km |
+| 10 | Toronto | North America | 3,500 km |
+
+---
+
+## Destinations (2)
+
+| Arena | Location | Represents |
+|-------|----------|------------|
+| **LCS Arena** | Los Angeles, USA | League of Legends Championship Series |
+| **VCT Arena** | Los Angeles, USA | VALORANT Champions Tour |
+
+Both are in LA. Choice determines faction allegiance.
+
+---
+
+## Touch-Friendly UI Guidelines
+
+### Minimum Touch Targets
+
+| Platform | Minimum Size |
+|----------|--------------|
+| Apple (iOS) | 44 × 44 pt |
+| Google (Android) | 48 × 48 dp |
+| **Our Standard** | **56 × 56 px** |
+
+### Button Placement
+
+```
+┌─────────────────────────────┐
+│      HARD TO REACH          │  ← Avoid primary actions
+│                             │
+│    COMFORTABLE ZONE         │  ← Info, back buttons OK
+│                             │
+│  ███ EASY ZONE ███          │  ← PRIMARY BUTTONS HERE
+│  ███ (BOTTOM) ███           │  ← Controls, selections
+└─────────────────────────────┘
+```
+
+### Racing Controls Layout
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│         [GAME VIEW - TOP 60%]           │
+│                                         │
+│─────────────────────────────────────────│
+│                                         │
+│   ┌─────┐               ┌─────┐        │
+│   │  ◀  │               │  ▶  │        │  ← 80px buttons
+│   │LEFT │               │RIGHT│        │
+│   └─────┘               └─────┘        │
+│                                         │
+│          ┌──────────────┐               │
+│          │  🚀 BOOST    │               │  ← Centered
+│          └──────────────┘               │
+│                                         │
+└─────────────────────────────────────────┘
+```
 
 ---
 
@@ -65,622 +566,128 @@ The game is **map-based** where:
 | **Noise level** | LOUD — music, cheering, announcements |
 | **Attention span** | SHORT — lots happening, people moving |
 | **Device** | Fan's personal phone (iOS/Android) |
-| **Play duration** | 1-2 minutes max per game |
+| **Play duration** | 2-3 minutes per game |
 
 ### Design Implications
 
 | Constraint | Our Solution |
 |------------|--------------|
 | Loud environment | No audio required, 100% visual |
-| Short attention | Quick 1-minute games |
+| Short attention | Quick 2-3 minute games |
 | Phone screens | Touch-friendly UI, big buttons |
-| Standing/walking | Simple one-hand controls |
+| Standing/walking | On-screen arrow controls |
 | Competition | Leaderboard creates energy |
-| Social | Duels, faction war, challenges |
 
 ---
 
-## Touch-Friendly UI Guidelines
+## Game Duration Target
 
-### Minimum Touch Targets
+| Phase | Target Time |
+|-------|-------------|
+| Destination + City reveal | ~30 seconds |
+| Route selection | ~30 seconds |
+| Vehicle selection (×3) | ~30 seconds total |
+| Racing segments (×3) | ~90 seconds total |
+| Results | ~15 seconds |
+| **TOTAL** | **~2.5-3 minutes** |
 
-| Platform | Minimum Size |
-|----------|--------------|
-| Apple (iOS) | 44 × 44 pt |
-| Google (Android) | 48 × 48 dp |
-| **Our Standard** | **56 × 56 px** (bigger is better for booth!) |
-
-### Button Placement
-
-```
-┌─────────────────────────────┐
-│      HARD TO REACH          │  ← Avoid primary actions here
-│                             │
-│    COMFORTABLE ZONE         │  ← Secondary actions OK
-│                             │
-│  ███ EASY ZONE ███          │  ← PRIMARY BUTTONS HERE
-│  ███ (BOTTOM) ███           │  ← Vehicle selection, Route picks
-└─────────────────────────────┘
-```
-
-### Touch UI Rules
-
-1. **Minimum 56px** for all tappable elements
-2. **12-16px spacing** between buttons
-3. **Primary actions at bottom** of screen (thumb zone)
-4. **Clear tap feedback** — color change, scale animation
-5. **No hover states** — touch has no hover
-6. **High contrast** — readable in bright booth lighting
+Perfect for booth environment!
 
 ---
 
-## Core Gameplay Flow (Visual)
-
-### Phase 1: Destination Selection
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│              ☁️ RUSH2C9                                     │
-│                                                             │
-│         Choose Your Destination                             │
-│                                                             │
-│    ┌─────────────────┐    ┌─────────────────┐              │
-│    │                 │    │                 │              │
-│    │   🎮 LCS        │    │   🎯 VCT        │              │
-│    │   ARENA         │    │   ARENA         │              │
-│    │                 │    │                 │              │
-│    │  League of      │    │  VALORANT       │              │
-│    │  Legends        │    │  Champions      │              │
-│    │                 │    │                 │              │
-│    └─────────────────┘    └─────────────────┘              │
-│                                                             │
-│         Which team do you support?                          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**What happens:**
-- Fan taps LCS or VCT
-- Choice affects faction war totals
-- Both destinations are in Los Angeles
-
----
-
-### Phase 2: City Reveal (Random Assignment)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│              YOUR STARTING CITY                             │
-│                                                             │
-│         ┌─────────────────────────────────┐                │
-│         │                                 │                │
-│         │    🌏 WORLD MAP (cartoon)       │                │
-│         │                                 │                │
-│         │         ★ CHENNAI               │                │
-│         │           (pulsing)             │                │
-│         │                                 │                │
-│         │                    🏁 LA        │                │
-│         │                                 │                │
-│         └─────────────────────────────────┘                │
-│                                                             │
-│              📍 CHENNAI, INDIA                              │
-│              Distance: 14,500 km                            │
-│                                                             │
-│              [ START JOURNEY ]                              │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**What happens:**
-- System randomly picks 1 of 10 cities
-- Animated reveal (zoom to city on map)
-- Shows distance to destination
-- Fan taps "Start Journey" to begin
-
----
-
-### Phase 3: Route Selection (Per Segment)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Segment 1 of 3                    Credits: 💳 200          │
-│─────────────────────────────────────────────────────────────│
-│                                                             │
-│         ┌─────────────────────────────────┐                │
-│         │                                 │                │
-│         │    🌏 MAP showing 3 routes      │                │
-│         │                                 │                │
-│         │    ★ Chennai                    │                │
-│         │     ╲___Route A (direct)        │                │
-│         │      ╲__Route B (scenic)        │                │
-│         │       ╲_Route C (safe)          │                │
-│         │                                 │                │
-│         └─────────────────────────────────┘                │
-│                                                             │
-│  Choose your route:                                         │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 🅰️ DIRECT         4,800 km    🌊 80% Water 🏔️ 20%  │   │
-│  │    Fastest path, mostly ocean                        │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 🅱️ SCENIC         5,200 km    🌊 50% Water 🏔️ 50%  │   │
-│  │    Mixed terrain, moderate distance                  │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 🅲️ SAFE           6,100 km    🌊 20% Water 🏔️ 80%  │   │
-│  │    Longer path, mostly land                          │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**What happens:**
-- Map shows 3 route options as paths
-- Each route has different distance and terrain mix
-- Fan taps to select a route
-- Terrain % is crucial for vehicle choice next!
-
----
-
-### Phase 4: Vehicle Selection (Per Segment)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Segment 1 of 3                    Credits: 💳 200          │
-│─────────────────────────────────────────────────────────────│
-│                                                             │
-│  Route: DIRECT (4,800 km)                                   │
-│  Terrain: 🌊 80% Water  🏔️ 20% Land                        │
-│                                                             │
-│  Choose your vehicle:                                       │
-│                                                             │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐                    │
-│  │    🚲    │ │    🚗    │ │    🚂    │                    │
-│  │   Bike   │ │   Car    │ │  Train   │                    │
-│  │  20 💳   │ │  40 💳   │ │  50 💳   │                    │
-│  │          │ │          │ │          │                    │
-│  │ ⚠️ SLOW  │ │ ⚠️ SLOW  │ │ ❌ BAD   │                    │
-│  └──────────┘ └──────────┘ └──────────┘                    │
-│                                                             │
-│  ┌──────────┐ ┌──────────┐                                 │
-│  │    🚢    │ │    ✈️    │                                 │
-│  │   Ship   │ │  Plane   │                                 │
-│  │  60 💳   │ │  100 💳  │                                 │
-│  │          │ │          │                                 │
-│  │ ✅ GOOD  │ │ ✅ GOOD  │   ← Terrain hints!              │
-│  └──────────┘ └──────────┘                                 │
-│                                                             │
-│         [ ← BACK ]              [ CONFIRM ]                │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**What happens:**
-- Shows selected route's terrain breakdown
-- 5 vehicles displayed with costs
-- **"GOOD FIT" / "SLOW" / "BAD" indicators** based on terrain!
-- Fan must balance cost vs speed
-- Credits deducted upon selection
-
-**Terrain Hint Logic:**
-| Terrain | Good Vehicles | Bad Vehicles |
-|---------|---------------|--------------|
-| 80%+ Water | Ship ✅, Plane ✅ | Bike ⚠️, Car ⚠️, Train ❌ |
-| 80%+ Land | Car ✅, Train ✅, Bike ⚠️ | Ship ⚠️ |
-| Mixed | Plane ✅ (works everywhere) | Depends on mix |
-
----
-
-### Phase 5: Traveling Animation
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Segment 1 of 3                    Credits: 💳 140          │
-│─────────────────────────────────────────────────────────────│
-│                                                             │
-│         ┌─────────────────────────────────┐                │
-│         │                                 │                │
-│         │    🌏 MAP                       │                │
-│         │                                 │                │
-│         │    ★ Chennai                    │                │
-│         │     ═══🚢════►                  │                │
-│         │         (ship moving)           │                │
-│         │                     ○ Waypoint  │                │
-│         │                                 │                │
-│         └─────────────────────────────────┘                │
-│                                                             │
-│              ⏱️ Traveling...                                │
-│              Distance: 4,800 km                             │
-│              Time: 24.0 seconds                             │
-│                                                             │
-│              ████████████░░░░░░ 65%                         │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**What happens:**
-- Brief animation showing vehicle moving on map
-- Progress bar fills up
-- Time is calculated based on terrain + vehicle speed
-- After animation, moves to next segment (or results)
-
----
-
-### Phase 6: Segment Loop (Repeat 3 Times)
-
-```
-Segment 1: Chennai → Waypoint 1
-    └── Route Selection → Vehicle Selection → Travel
-
-Segment 2: Waypoint 1 → Waypoint 2
-    └── Route Selection → Vehicle Selection → Travel
-
-Segment 3: Waypoint 2 → LCS/VCT Arena
-    └── Route Selection → Vehicle Selection → Travel → RESULTS!
-```
-
-**Progress indicator:**
-```
-[●━━━━━━━━] Segment 1 of 3
-[━━━●━━━━━] Segment 2 of 3
-[━━━━━━●━━] Segment 3 of 3
-[━━━━━━━━●] FINISHED!
-```
-
----
-
-### Phase 7: Results Screen
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│              🏁 JOURNEY COMPLETE! 🏁                        │
-│                                                             │
-│              Chennai → LCS Arena                            │
-│                                                             │
-│         ┌─────────────────────────────────┐                │
-│         │                                 │                │
-│         │         YOUR SCORE              │                │
-│         │                                 │                │
-│         │          ⭐ 785 ⭐              │                │
-│         │                                 │                │
-│         └─────────────────────────────────┘                │
-│                                                             │
-│  Score Breakdown:                                           │
-│  ├── Base Points:        500                                │
-│  ├── Time Bonus:         +205  (finished in 95 sec)        │
-│  └── Credits Saved:      +80   (spent 120 of 200)          │
-│                                                             │
-│  Journey Summary:                                           │
-│  ├── Segment 1: Ship (60💳) → 24 sec                       │
-│  ├── Segment 2: Car (40💳) → 35 sec                        │
-│  └── Segment 3: Bike (20💳) → 36 sec                       │
-│                                                             │
-│  Total Time: 95 seconds                                     │
-│  Total Spent: 120 credits                                   │
-│                                                             │
-│         [ 🏠 HOME ]         [ 🔄 PLAY AGAIN ]               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**What happens:**
-- Shows final score with breakdown
-- Journey log shows each segment's choice
-- Score saved to player profile
-- Faction count updated (LCS or VCT)
-- Options to play again or go home
-
----
-
-## 1. Starting Cities (10)
-
-Players are randomly assigned one of these cities:
-
-| # | City | Region | Approx Distance to LA |
-|---|------|--------|----------------------|
-| 1 | Tokyo | Asia | 8,800 km |
-| 2 | Seoul | Asia | 9,500 km |
-| 3 | Chennai | Asia | 14,500 km |
-| 4 | Dubai | Middle East | 13,400 km |
-| 5 | Sydney | Oceania | 12,000 km |
-| 6 | London | Europe | 8,800 km |
-| 7 | Paris | Europe | 9,100 km |
-| 8 | Berlin | Europe | 9,300 km |
-| 9 | São Paulo | South America | 9,900 km |
-| 10 | Toronto | North America | 3,500 km |
-
----
-
-## 2. Destinations (2)
-
-| Arena | Location | Represents |
-|-------|----------|------------|
-| **LCS Arena** | Los Angeles, USA | League of Legends Championship Series |
-| **VCT Arena** | Los Angeles, USA | VALORANT Champions Tour |
-
-Both are in Los Angeles, but fans choose which team/game to support. This creates a faction war on the leaderboard.
-
----
-
-## 3. Journey Structure
-
-Each journey consists of **3 segments**. Each segment offers:
-- 3 route options (different distances)
-- 5 vehicle options (different costs & speeds)
-
-```
-START (Random City)
-    │
-    ├── Segment 1: 3 route choices
-    │       └── Pick vehicle
-    │
-    ├── Segment 2: 3 route choices
-    │       └── Pick vehicle
-    │
-    └── Segment 3: 3 route choices
-            └── Pick vehicle
-    │
-    ▼
-FINISH (LCS or VCT Arena)
-```
-
----
-
-## 4. Route Options
-
-Each segment offers 3 routes with different characteristics:
-
-| Route Type | Distance | Terrain Mix |
-|------------|----------|-------------|
-| **Direct** | Shortest | May cross ocean |
-| **Scenic** | Medium | Mixed land/water |
-| **Safe** | Longest | Mostly land |
-
-**Example (Tokyo → Segment 1):**
-| Route | Distance | Terrain |
-|-------|----------|---------|
-| A: Pacific Direct | 4,000 km | 100% Water |
-| B: Via Alaska | 5,500 km | 60% Water, 40% Land |
-| C: Via Hawaii | 4,800 km | 80% Water, 20% Land |
-
----
-
-## 5. Vehicles
-
-### Vehicle Stats
-
-| Vehicle | Cost (Credits) | Land Speed | Water Speed | Air Speed |
-|---------|----------------|------------|-------------|-----------|
-| 🚲 Bike | 20 | Slow (1x) | ❌ Very Slow (0.2x) | ❌ Cannot |
-| 🚗 Car | 40 | Fast (2x) | ❌ Very Slow (0.2x) | ❌ Cannot |
-| 🚂 Train | 50 | Fast (2x) | ❌ Cannot (0x) | ❌ Cannot |
-| 🚢 Ship | 60 | Slow (0.5x) | Fast (2x) | ❌ Cannot |
-| ✈️ Plane | 100 | ❌ Cannot (0x) | Fast (1.5x) | Very Fast (3x) |
-
-### Speed Multipliers Explained
-
-Base travel time = Distance / 100 (in seconds)
-
-**Example:** 4,000 km route
-- Bike on land: 4000/100 × (1/1) = 40 sec
-- Car on land: 4000/100 × (1/2) = 20 sec
-- Plane in air: 4000/100 × (1/3) = 13.3 sec
-
-### Vehicle Selection Strategy
-
-| Terrain | Best Vehicle | Why |
-|---------|--------------|-----|
-| 100% Land | Car (40 credits) | Fast & cheap |
-| 100% Water | Ship (60 credits) | Only water-efficient option |
-| Mixed | Plane (100 credits) | Works everywhere but costly |
-| Budget play | Bike (20 credits) | Slow but saves credits |
-
----
-
-## 6. Currency System
-
-### Two Currencies
-
-| Currency | Symbol | Purpose | Behavior |
-|----------|--------|---------|----------|
-| **Credits** | 💳 | Buy vehicles | Refreshes each game (200 per game) |
-| **Score** | 🏆 | Leaderboard ranking | Accumulates permanently |
-
-### Why Two Currencies?
-
-- **Credits:** Prevents "stuck" scenarios. Every game starts fresh with 200 credits.
-- **Score:** Long-term progression. Fans climb leaderboard over multiple games.
-
----
-
-## 7. Scoring System
-
-### Score Calculation
-
-```
-FINAL SCORE = Base Points + Time Bonus + Leftover Credits Bonus
-
-Where:
-- Base Points: 500 (for completing journey)
-- Time Bonus: MAX(0, 300 - Travel Time in seconds)
-- Leftover Credits: Unspent credits from 200 budget
-```
-
-### Example Calculations
-
-**Fast & Expensive Strategy:**
-- Spends 180 credits (planes)
-- Finishes in 45 seconds
-- Score = 500 + (300-45) + (200-180) = 500 + 255 + 20 = **775 pts**
-
-**Slow & Cheap Strategy:**
-- Spends 60 credits (bikes)
-- Finishes in 180 seconds
-- Score = 500 + (300-180) + (200-60) = 500 + 120 + 140 = **760 pts**
-
-**Balanced Strategy:**
-- Spends 120 credits (mix)
-- Finishes in 90 seconds
-- Score = 500 + (300-90) + (200-120) = 500 + 210 + 80 = **790 pts**
-
-### Key Insight
-
-Balance is often better than extremes! Pure speed wastes credits, pure cheapness wastes time.
-
----
-
-## 8. Duel System
-
-### How Duels Work
-
-1. **Challenge:** Fan A challenges Fan B (from leaderboard or nearby)
-2. **Accept:** Fan B accepts the challenge
-3. **Bet:** Both agree on bet amount (e.g., 50 points)
-4. **Setup:** System assigns SAME starting city to both
-5. **Race:** Both play simultaneously
-6. **Result:**
-   - Winner: +50 points (gains bet)
-   - Loser: -50 points (loses bet)
-
-### Duel Rules
-
-| Rule | Detail |
-|------|--------|
-| Minimum bet | 10 points |
-| Maximum bet | 50% of lower player's score |
-| Same conditions | Both get identical starting city & routes |
-| Timeout | 5 minutes to complete, or forfeit |
-
----
-
-## 9. Faction System
+## Faction System
 
 ### LCS vs VCT
 
 Every completed journey adds to faction totals:
 
 ```
-┌─────────────────────────────────────────────┐
-│          🏆 FACTION WAR 🏆                  │
-│                                             │
-│   🎮 LCS          vs          🎯 VCT       │
-│   1,247 fans                  1,183 fans   │
-│   ████████████░░              ██████████░░ │
-│   52%                         48%          │
-│                                             │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│          🏆 FACTION WAR 🏆              │
+│                                         │
+│   🎮 LCS          vs          🎯 VCT   │
+│   1,247 fans                  1,183 fans│
+│   ████████████░░              ██████████│
+│   52%                         48%       │
+└─────────────────────────────────────────┘
 ```
-
-### Faction Points
-
-- Each completed journey = +1 to chosen faction
-- Big screen shows live faction war
-- Creates community energy at booth
 
 ---
 
-## 10. Leaderboard
+## Duel System (Future - v6.0)
 
-### Public Display (Booth Big Screen)
+### How Duels Work
 
-```
-┌─────────────────────────────────────────────┐
-│          🏆 TOP TRAVELERS 🏆                │
-│                                             │
-│   1. Mike Johnson         — 4,230 pts       │
-│   2. Sarah Lee            — 3,800 pts       │
-│   3. Alex Chen            — 3,650 pts       │
-│   4. Mike Johnson         — 3,100 pts       │
-│   5. Chris Kumar          — 2,900 pts       │
-│                                             │
-│   Your Rank: #47 (1,250 pts)                │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-**Note:** Avatars are NEVER shown publicly (they're secret like passwords).
-
-### Personal View (Fan's Phone)
-
-```
-┌─────────────────────────────────────────────┐
-│                                             │
-│   🏎️ Mike Johnson                          │
-│                                             │
-│   Score: 4,230 pts                          │
-│   Rank: #1 🏆                               │
-│   Games Played: 15                          │
-│   Faction: LCS                              │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
-Avatar (🏎️) shown only on personal device.
+1. Fan A challenges Fan B
+2. Fan B accepts
+3. Both bet scores
+4. Same starting city assigned
+5. Both race simultaneously
+6. Winner takes bet
 
 ---
 
-## 11. Game Balance
+## Leaderboard (v4.0)
 
-### Design Goals
-
-| Goal | How Achieved |
-|------|--------------|
-| Quick games | ~1 minute per journey |
-| Strategic depth | Route + vehicle combinations |
-| Replayability | Random starting cities |
-| Social competition | Leaderboard + duels |
-| Accessibility | Simple rules, visual feedback |
-
-### Balancing Levers
-
-If testing reveals issues:
-
-| Problem | Solution |
-|---------|----------|
-| Games too long | Reduce distances, increase speeds |
-| Games too short | Add more segments or longer routes |
-| One vehicle dominates | Adjust costs or speeds |
-| Scores too similar | Increase time bonus multiplier |
-| Scores too different | Decrease time bonus multiplier |
+- Top players displayed
+- Faction totals
+- Personal rank
+- Avatars NEVER shown publicly (secret like passwords)
 
 ---
 
-## 12. Edge Cases
+## Edge Cases
 
 | Scenario | Handling |
 |----------|----------|
-| Fan runs out of credits mid-game | Cannot happen — 200 credits is enough for cheapest path (60 credits min) |
-| Two fans have same name + avatar | System rejects, asks to pick different avatar |
-| Fan disconnects mid-game | Game state saved, can resume |
-| Fan takes too long (>5 min) | Auto-complete with minimum score |
-| Duplicate leaderboard names | Allowed — avatar differentiates internally |
+| Fan runs out of credits | Cannot happen — cheapest path = 60 credits |
+| Same name + avatar | System rejects, pick different avatar |
+| Fan disconnects | Game state saved, can resume |
+| Too long (>5 min) | Auto-complete with minimum score |
+| Hit too many obstacles | Keep going, just slower time |
 
 ---
 
-## 13. Future Enhancements (Post-Hackathon)
+## Technical Implementation Notes
 
-If the game wins and gets deployed:
+### Technology Stack
 
-1. **More cities** — 20+ starting locations
-2. **Power-ups** — Speed boosts, credit bonuses
-3. **Daily challenges** — Special routes with bonus points
-4. **Achievements** — "Speed Demon", "Budget Traveler", etc.
-5. **Seasonal events** — Themed routes during LCS/VCT finals
-6. **Team mode** — Groups race together
+| Component | Technology |
+|-----------|------------|
+| Map View | React + SVG/Canvas |
+| Racing Game | Phaser.js 3.x |
+| State Management | React useState/useReducer |
+| Data Persistence | localStorage (→ Firebase later) |
+| Styling | Tailwind CSS |
+
+### Phaser Racing Reference
+
+- Style: Pseudo-3D like OutRun / Phaser Driving example
+- Reference: https://moonsault.itch.io/phaser-driving
+- Road rendering: Perspective projection
+- Obstacles: Sprites on road that scroll toward player
+
+---
+
+## Decisions Log
+
+| Decision | Choice | Reason |
+|----------|--------|--------|
+| Road types vs terrain | Road types | More intuitive for racing game |
+| Vehicles | 5 road vehicles | Matches road types, no water/air needed |
+| Controls | On-screen buttons | No accidental swipes, clear visibility |
+| Game engine | Phaser.js | Real game feel, not just form filling |
+| Map style | Cartoon 2D | Fun, readable on phone, matches booth vibe |
+| Booster cost | TBD | Decide after testing game balance |
 
 ---
 
 ## Summary
 
 Rush2C9 is designed to be:
-- ⚡ **Fast** — 1 minute games
-- 🧠 **Strategic** — Balance speed vs cost
-- 🏆 **Competitive** — Leaderboard + duels
-- 🎉 **Social** — Faction war, challenges
-- 📱 **Accessible** — Browser-based, no install
+- 🎮 **A Real Game** — Phaser.js racing, not just clicking buttons
+- ⚡ **Fast** — 2-3 minute games
+- 🧠 **Strategic** — Route + vehicle choices matter
+- 🏆 **Competitive** — Leaderboard + faction war
+- 📱 **Touch-Friendly** — Big buttons, clear controls
+- 🎉 **Fun at Booths** — Loud environment friendly
