@@ -142,15 +142,91 @@ This makes vehicle choice a **strategic mid-game decision** based on actual road
 | Multiple hits | Each hit slows you down again |
 | Clean run | Maintain top speed, faster completion |
 
-### Booster System
+### Booster System (Updated Jan 24)
 
-| Property | Value |
-|----------|-------|
-| Cost | 10 💳 per use |
-| Duration | 2 seconds |
-| Speed increase | +50% temporary boost |
-| Cooldown | 3 seconds between boosts |
-| Strategy | Use for final stretch or to recover from obstacle hit |
+| Property | Value | Notes |
+|----------|-------|-------|
+| Boost Amount | +25 km/h | Added to current speed |
+| Duration | 3 seconds | Temporary, then returns to base |
+| Cooldown | 10 seconds | System-controlled availability |
+| Cost | FREE | No longer consumes credits |
+| Strategy | Use when available for speed bursts |
+
+> **Change:** Boost is now system-driven (cooldown-based) instead of credit-based. Simplifies gameplay.
+
+---
+
+## Segment & Speed Configuration (Added Jan 24)
+
+> **Design Philosophy:** All values are highly configurable for easy tuning during testing.
+
+### Segment Distances
+
+| Segment | Distance | Rationale |
+|---------|----------|-----------|
+| 1 | 5 km | Short intro segment |
+| 2 | 7 km | Medium challenge |
+| 3 | 9 km | Long final stretch |
+| **Total** | **21 km** | Full journey |
+
+### Speed Progression
+
+| Config | Value | Description |
+|--------|-------|-------------|
+| Segment Start Speed | [100, 125, 160] | Starting speed per segment (km/h) |
+| Speed Increase | +5 km/h per 1 km | Gradual acceleration within segment |
+| Max Speed | 200 km/h | Speed cap |
+
+**Example - Segment 1:**
+- Start: 100 km/h
+- After 1 km: 105 km/h
+- After 2 km: 110 km/h
+- After 5 km (end): 125 km/h → carries to Segment 2 start
+
+### Collision Effects
+
+| Config | Value | Description |
+|--------|-------|-------------|
+| Speed Reduction | 50% | Speed drops to half on collision |
+| Slowdown Duration | 2 seconds | Time before speed recovers |
+
+### Configuration Location
+
+All these values are defined in `src/data/gameData.js`:
+
+```javascript
+// SEGMENT_CONFIG - Distance and speed per segment
+export const SEGMENT_CONFIG = {
+  distances: [5, 7, 9],              // km per segment
+  startSpeed: [100, 125, 160],       // km/h at segment start
+  speedIncreasePerKm: 5,             // +5 km/h every 1 km
+  maxSpeed: 200,                     // speed cap
+};
+
+// BOOST_CONFIG - Boost behavior
+export const BOOST_CONFIG = {
+  amount: 25,                        // +25 km/h
+  duration: 3,                       // seconds
+  cooldown: 10,                      // seconds between boosts
+};
+
+// COLLISION_CONFIG - Collision penalties
+export const COLLISION_CONFIG = {
+  speedReduction: 0.5,               // 50% speed reduction
+  slowdownDuration: 2,               // seconds
+};
+```
+
+### Tuning Guide
+
+| If... | Adjust... |
+|-------|-----------|
+| Game too short | Increase `distances` |
+| Game too long | Decrease `distances` |
+| Too easy | Decrease `startSpeed`, increase `speedIncreasePerKm` |
+| Too hard | Increase `startSpeed`, decrease collision penalty |
+| Boost too weak | Increase `BOOST_CONFIG.amount` |
+| Boost too strong | Decrease `BOOST_CONFIG.amount` or `duration` |
 
 ---
 

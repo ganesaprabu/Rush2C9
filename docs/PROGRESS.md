@@ -317,6 +317,44 @@
 
 ---
 
+### January 24, 2026 (Day 4 - Session 2) — HUD Redesign & Speed Configuration
+
+**Completed:**
+- [x] Redesigned HUD to single compact row: `[Seg 1/4 | 💳 200 | ⏱️ 56s | 🚗 100 | 📍 0.5km | ▓▓░░░░]`
+- [x] Added speed display (dynamic, updates every 200ms to avoid flicker)
+- [x] Added distance traveled display
+- [x] Made HUD bar taller (2x height) for better readability
+- [x] Throttled stats updates to 200ms interval (was every frame)
+- [x] Documented speed & segment configuration in GAME_MECHANICS.md
+
+**Configuration Decisions (Highly Configurable):**
+
+| Config | Value | Rationale |
+|--------|-------|-----------|
+| Segment distances | [5, 7, 9] km | Progressive difficulty |
+| Segment start speeds | [100, 125, 160] km/h | Speed carries over |
+| Speed increase | +5 km/h per 1 km | Gradual acceleration |
+| Max speed | 200 km/h | Cap to prevent runaway |
+| Boost amount | +25 km/h | Temporary speed burst |
+| Boost duration | 3 seconds | Then returns to base |
+| Boost cooldown | 10 seconds | System-controlled availability |
+| Collision slowdown | 50% speed | Punishment for hitting obstacles |
+| Slowdown duration | 2 seconds | Recovery time |
+
+**Code Changes (Uncommitted):**
+- `GameHUD.jsx` - Single row compact layout with all stats
+- `RacingScene.js` - Stats throttling (200ms), segmentDistanceKm
+- `GameScreen.jsx` - Speed/distance state, handleStats callback
+- `PhaserGame.jsx` - onStats callback passthrough
+- `GAME_MECHANICS.md` - New "Segment & Speed Configuration" section
+
+**Next:**
+- Implement the speed configuration in gameData.js
+- Apply segment distances and speed progression in RacingScene
+- Implement boost cooldown system (system-driven, not credit-based)
+
+---
+
 ## Key Decisions Log
 
 | Date | Decision | Before | After | Reason |
