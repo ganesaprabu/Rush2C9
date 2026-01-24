@@ -289,9 +289,9 @@ class RacingScene extends Phaser.Scene {
       if (y >= maxy) continue;
       if (y < horizon - 10) continue;
 
-      // Road shifts based on playerX (player steers, road moves)
-      // Reduced shift amount to prevent road edges from overlapping player car
-      const roadShift = -this.playerX * scale * this.roadWidth * 0.25;
+      // Road shifts slightly for parallax effect (car moves, road stays mostly stable)
+      // Very small shift to give slight perspective feel without dragging road edges
+      const roadShift = -this.playerX * scale * this.roadWidth * 0.02;
       const w = scale * this.roadWidth;
 
       lines.push({
@@ -318,8 +318,8 @@ class RacingScene extends Phaser.Scene {
     // Draw the closest road segment extending to the bottom of screen
     if (lines.length > 0) {
       const closest = lines[0];
-      // Bottom line shifts same as closest segment - reduced to prevent overlap
-      const bottomShift = -this.playerX * this.roadWidth * 0.12;
+      // Bottom line shifts very slightly for parallax (car moves instead)
+      const bottomShift = -this.playerX * this.roadWidth * 0.01;
       const bottomLine = {
         y: this.height,
         x: this.width / 2 + bottomShift,
@@ -501,8 +501,10 @@ class RacingScene extends Phaser.Scene {
   }
 
   drawPlayerCar() {
-    // Car is ALWAYS CENTERED - road shifts, not car (classic OutRun style)
-    const playerScreenX = this.width / 2;
+    // Car moves left/right based on playerX, road stays stable
+    // playerX ranges from -3.0 to 3.0, map to screen position
+    const steerOffset = this.playerX * (this.width * 0.12); // Car moves up to ~36% of screen width
+    const playerScreenX = this.width / 2 + steerOffset;
     const playerScreenY = this.height - 50;  // Near bottom of screen
 
     // Car dimensions - REAR VIEW (wider than tall, like looking at back of car)
