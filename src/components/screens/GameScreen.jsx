@@ -264,9 +264,9 @@ function GameScreen() {
     const roadTypeData = ROAD_TYPES[segment?.roadType];
 
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
-        {/* Game container - takes up most of the screen */}
-        <div className="flex-1 relative max-w-md mx-auto w-full">
+      <div className="h-[100dvh] bg-[#0a0a0a] text-white flex flex-col overflow-hidden">
+        {/* Game area with HUD */}
+        <div className="flex-1 relative max-w-md mx-auto w-full overflow-hidden">
           {/* Phaser Game Canvas */}
           <PhaserGame
             ref={gameContainerRef}
@@ -292,8 +292,10 @@ function GameScreen() {
             }}
             isBoosting={isBoosting}
           />
+        </div>
 
-          {/* Control Buttons Overlay */}
+        {/* Control Buttons - fixed at bottom */}
+        <div className="shrink-0 max-w-md mx-auto w-full">
           <ControlButtons
             onSteer={handleSteer}
             onBoost={handleBoostPress}

@@ -53,8 +53,10 @@ const PhaserGame = forwardRef(function PhaserGame({
       parent: containerRef.current,
       backgroundColor: PHASER_CONFIG.colors.sky,
       scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: '100%',
+        height: '100%'
       },
       physics: {
         default: 'arcade',
@@ -136,7 +138,7 @@ const PhaserGame = forwardRef(function PhaserGame({
   return (
     <div
       ref={containerRef}
-      className="phaser-game-container w-full aspect-[2/3] rounded-xl overflow-hidden"
+      className="phaser-game-container w-full h-full overflow-hidden"
       style={{ touchAction: 'none' }} // Prevent browser touch handling
     />
   );

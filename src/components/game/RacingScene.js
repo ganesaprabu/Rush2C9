@@ -132,9 +132,11 @@ class RacingScene extends Phaser.Scene {
     const dt = Math.min(delta / 1000, 0.1);
     this.elapsedTime += dt;
 
-    // Input
+    // Input - keyboard overrides external steer only when pressed
     if (this.cursors.left.isDown) this.steerDirection = -1;
     else if (this.cursors.right.isDown) this.steerDirection = 1;
+    // Note: external steer() calls set steerDirection directly, so if no key is pressed,
+    // the external value persists (which is what we want for tilt controls)
 
     if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
       this.activateBoost();
@@ -185,12 +187,12 @@ class RacingScene extends Phaser.Scene {
       this.playerZ -= this.trackLength;
     }
 
-    // Steering - playerX ranges from -1.0 to 1.0 (within road bounds)
+    // Steering - playerX ranges from -3.0 to 3.0 (3x range for much more movement)
     const speedPct = this.speed / this.maxSpeed;
-    this.playerX += this.steerDirection * 1.8 * dt * speedPct;
+    this.playerX += this.steerDirection * 4.0 * dt * speedPct;
 
-    // Clamp to road bounds - keep car within road edges
-    this.playerX = Phaser.Math.Clamp(this.playerX, -1.0, 1.0);
+    // Clamp to road bounds - allow car to move much further left/right
+    this.playerX = Phaser.Math.Clamp(this.playerX, -3.0, 3.0);
 
     // Update traffic - cars move relative to player
     for (const car of this.cars) {
