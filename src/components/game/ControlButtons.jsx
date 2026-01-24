@@ -1,11 +1,10 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { GAME_CONFIG } from '../../data/gameData';
 
 /**
- * ControlButtons - Touch controls for racing game
+ * ControlButtons - Touch/Mouse controls for racing game
  *
- * Left/Right steering buttons + Boost button
- * Uses touch events for mobile-friendly controls
+ * Uses native event listeners for immediate touch response
  */
 function ControlButtons({
   onSteer,
@@ -15,93 +14,198 @@ function ControlButtons({
   isBoosting = false
 }) {
   const steerIntervalRef = useRef(null);
+  const [activeButton, setActiveButton] = useState(null);
 
-  // Track if we're currently steering
-  const isSteeringRef = useRef(false);
+  // Refs for buttons to attach native event listeners
+  const leftBtnRef = useRef(null);
+  const rightBtnRef = useRef(null);
+  const boostBtnRef = useRef(null);
 
-  // Start steering when button pressed
-  const startSteer = useCallback((direction) => {
-    if (isSteeringRef.current) return; // Prevent double-firing
-    isSteeringRef.current = true;
+  // Store callbacks in refs to avoid stale closures
+  const onSteerRef = useRef(onSteer);
+  const onBoostRef = useRef(onBoost);
+  const canBoostRef = useRef(canBoost);
+  const isBoostingRef = useRef(isBoosting);
+  const creditsRef = useRef(credits);
 
-    // Immediately send steer command
-    onSteer?.(direction);
+  useEffect(() => {
+    onSteerRef.current = onSteer;
+    onBoostRef.current = onBoost;
+    canBoostRef.current = canBoost;
+    isBoostingRef.current = isBoosting;
+    creditsRef.current = credits;
+  }, [onSteer, onBoost, canBoost, isBoosting, credits]);
 
-    // Continue sending while held
+  // Start steering function
+  const startSteer = useCallback((direction, button) => {
     if (steerIntervalRef.current) {
       clearInterval(steerIntervalRef.current);
     }
-    steerIntervalRef.current = setInterval(() => {
-      onSteer?.(direction);
-    }, 50); // Send steering commands at 20fps
-  }, [onSteer]);
+    setActiveButton(button);
+    onSteerRef.current?.(direction);
 
-  // Stop steering when button released
+    // Continuous steering while held
+    steerIntervalRef.current = setInterval(() => {
+      onSteerRef.current?.(direction);
+    }, 50);
+  }, []);
+
+  // Stop steering function
   const stopSteer = useCallback(() => {
-    isSteeringRef.current = false;
+    setActiveButton(null);
     if (steerIntervalRef.current) {
       clearInterval(steerIntervalRef.current);
       steerIntervalRef.current = null;
     }
-    onSteer?.(0); // Center
-  }, [onSteer]);
+    onSteerRef.current?.(0);
+  }, []);
 
   // Handle boost
   const handleBoost = useCallback(() => {
-    if (canBoost && !isBoosting && credits >= GAME_CONFIG.boostCost) {
-      onBoost?.();
+    if (canBoostRef.current && !isBoostingRef.current && creditsRef.current >= GAME_CONFIG.boostCost) {
+      onBoostRef.current?.();
     }
-  }, [canBoost, isBoosting, credits, onBoost]);
+  }, []);
+
+  // Attach native event listeners for immediate response
+  useEffect(() => {
+    const leftBtn = leftBtnRef.current;
+    const rightBtn = rightBtnRef.current;
+    const boostBtn = boostBtnRef.current;
+
+    if (!leftBtn || !rightBtn || !boostBtn) return;
+
+    // Left button handlers
+    const leftStart = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startSteer(-1, 'left');
+    };
+    const leftEnd = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      stopSteer();
+    };
+
+    // Right button handlers
+    const rightStart = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startSteer(1, 'right');
+    };
+    const rightEnd = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      stopSteer();
+    };
+
+    // Boost handler
+    const boostTap = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleBoost();
+    };
+
+    // Use touchstart/touchend for mobile (faster than pointer events)
+    // Also add mouse events for desktop
+    const options = { passive: false, capture: true };
+
+    // Left button
+    leftBtn.addEventListener('touchstart', leftStart, options);
+    leftBtn.addEventListener('touchend', leftEnd, options);
+    leftBtn.addEventListener('touchcancel', leftEnd, options);
+    leftBtn.addEventListener('mousedown', leftStart, options);
+    leftBtn.addEventListener('mouseup', leftEnd, options);
+    leftBtn.addEventListener('mouseleave', leftEnd, options);
+
+    // Right button
+    rightBtn.addEventListener('touchstart', rightStart, options);
+    rightBtn.addEventListener('touchend', rightEnd, options);
+    rightBtn.addEventListener('touchcancel', rightEnd, options);
+    rightBtn.addEventListener('mousedown', rightStart, options);
+    rightBtn.addEventListener('mouseup', rightEnd, options);
+    rightBtn.addEventListener('mouseleave', rightEnd, options);
+
+    // Boost button
+    boostBtn.addEventListener('touchstart', boostTap, options);
+    boostBtn.addEventListener('mousedown', boostTap, options);
+
+    return () => {
+      leftBtn.removeEventListener('touchstart', leftStart, options);
+      leftBtn.removeEventListener('touchend', leftEnd, options);
+      leftBtn.removeEventListener('touchcancel', leftEnd, options);
+      leftBtn.removeEventListener('mousedown', leftStart, options);
+      leftBtn.removeEventListener('mouseup', leftEnd, options);
+      leftBtn.removeEventListener('mouseleave', leftEnd, options);
+
+      rightBtn.removeEventListener('touchstart', rightStart, options);
+      rightBtn.removeEventListener('touchend', rightEnd, options);
+      rightBtn.removeEventListener('touchcancel', rightEnd, options);
+      rightBtn.removeEventListener('mousedown', rightStart, options);
+      rightBtn.removeEventListener('mouseup', rightEnd, options);
+      rightBtn.removeEventListener('mouseleave', rightEnd, options);
+
+      boostBtn.removeEventListener('touchstart', boostTap, options);
+      boostBtn.removeEventListener('mousedown', boostTap, options);
+    };
+  }, [startSteer, stopSteer, handleBoost]);
 
   const boostDisabled = !canBoost || isBoosting || credits < GAME_CONFIG.boostCost;
 
+  // Prevent any text selection or context menu
+  const containerStyle = {
+    WebkitTouchCallout: 'none',
+    WebkitUserSelect: 'none',
+    userSelect: 'none',
+    touchAction: 'none',
+    WebkitTapHighlightColor: 'transparent',
+  };
+
   return (
-    <div className="p-2" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))', touchAction: 'none' }}>
-      <div className="flex justify-between items-center gap-2" style={{ touchAction: 'none' }}>
+    <div
+      className="absolute bottom-0 left-0 right-0 p-3"
+      style={{
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+        ...containerStyle
+      }}
+    >
+      <div className="flex justify-between items-center gap-3">
         {/* Left button */}
-        <button
-          onTouchStart={() => startSteer(-1)}
-          onTouchEnd={stopSteer}
-          onTouchCancel={stopSteer}
-          onMouseDown={() => startSteer(-1)}
-          onMouseUp={stopSteer}
-          onMouseLeave={stopSteer}
-          className="w-16 h-16 bg-gray-800/90 active:bg-cyan-600 rounded-xl flex items-center justify-center text-3xl text-white shadow-lg select-none"
-          style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'none', userSelect: 'none' }}
+        <div
+          ref={leftBtnRef}
+          className={`w-16 h-16 rounded-xl flex items-center justify-center text-3xl text-white shadow-lg cursor-pointer ${
+            activeButton === 'left' ? 'bg-cyan-600' : 'bg-gray-800/90'
+          }`}
+          style={containerStyle}
         >
           ◀
-        </button>
+        </div>
 
-        {/* Boost button - smaller height */}
-        <button
-          onTouchStart={handleBoost}
-          onMouseDown={handleBoost}
-          disabled={boostDisabled}
-          className={`flex-1 mx-2 px-4 py-2 rounded-xl font-bold text-sm shadow-lg select-none ${
+        {/* Boost button */}
+        <div
+          ref={boostBtnRef}
+          className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-center cursor-pointer ${
             isBoosting
               ? 'bg-yellow-500 text-black animate-pulse'
               : boostDisabled
                 ? 'bg-gray-700/50 text-gray-500'
-                : 'bg-orange-600/90 active:bg-orange-400 text-white'
+                : 'bg-orange-600 text-white'
           }`}
-          style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'none', userSelect: 'none' }}
+          style={containerStyle}
         >
           {isBoosting ? '🚀 BOOST!' : `🚀 BOOST (${GAME_CONFIG.boostCost}💳)`}
-        </button>
+        </div>
 
         {/* Right button */}
-        <button
-          onTouchStart={() => startSteer(1)}
-          onTouchEnd={stopSteer}
-          onTouchCancel={stopSteer}
-          onMouseDown={() => startSteer(1)}
-          onMouseUp={stopSteer}
-          onMouseLeave={stopSteer}
-          className="w-16 h-16 bg-gray-800/90 active:bg-cyan-600 rounded-xl flex items-center justify-center text-3xl text-white shadow-lg select-none"
-          style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'none', userSelect: 'none' }}
+        <div
+          ref={rightBtnRef}
+          className={`w-16 h-16 rounded-xl flex items-center justify-center text-3xl text-white shadow-lg cursor-pointer ${
+            activeButton === 'right' ? 'bg-cyan-600' : 'bg-gray-800/90'
+          }`}
+          style={containerStyle}
         >
           ▶
-        </button>
+        </div>
       </div>
     </div>
   );

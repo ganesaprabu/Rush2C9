@@ -189,7 +189,7 @@ class RacingScene extends Phaser.Scene {
 
     // Steering - playerX ranges from -3.0 to 3.0 (3x range for much more movement)
     const speedPct = this.speed / this.maxSpeed;
-    this.playerX += this.steerDirection * 4.0 * dt * speedPct;
+    this.playerX += this.steerDirection * 8.0 * dt * speedPct;
 
     // Clamp to road bounds - allow car to move much further left/right
     this.playerX = Phaser.Math.Clamp(this.playerX, -3.0, 3.0);
@@ -505,7 +505,7 @@ class RacingScene extends Phaser.Scene {
     // playerX ranges from -3.0 to 3.0, map to screen position
     const steerOffset = this.playerX * (this.width * 0.12); // Car moves up to ~36% of screen width
     const playerScreenX = this.width / 2 + steerOffset;
-    const playerScreenY = this.height - 50;  // Near bottom of screen
+    const playerScreenY = this.height - 140;  // Higher up to avoid control buttons
 
     // Car dimensions - REAR VIEW (wider than tall, like looking at back of car)
     const carW = 90;

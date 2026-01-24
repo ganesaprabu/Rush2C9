@@ -67,8 +67,8 @@
 | Phase | Task | Status |
 |-------|------|--------|
 | 3.1 | Game Data Architecture | ✅ Complete |
-| 3.2 | City Reveal Screen (Auto-Advance) | ⏳ Pending |
-| 3.3 | Phaser Racing Game (CORE) | ⏳ Pending |
+| 3.2 | City Reveal Screen (Auto-Advance) | ✅ Complete |
+| 3.3 | Phaser Racing Game (CORE) | ⚠️ In Progress (Mobile touch issue) |
 | 3.4 | Pit Stop Screen | ⏳ Pending |
 | 3.5 | Segment Loop | ⏳ Pending |
 | 3.6 | Results Screen + Journey Map | ⏳ Pending |
@@ -84,23 +84,26 @@
 - [x] Add obstacle definitions
 - [x] Add helper functions (getRandomStartingCity, generateRouteSegments, etc.)
 
-**3.2 City Reveal Screen (Auto-Advance)**
-- [ ] Random city from 10 cities
-- [ ] Display city name, emoji, region, distance
-- [ ] Show destination (LCS/VCT)
-- [ ] Auto-advance after 3 seconds
-- [ ] "GET READY" countdown
+**3.2 City Reveal Screen (Auto-Advance) ✅**
+- [x] Random city from 10 cities
+- [x] Display city name, emoji, region, distance
+- [x] Show destination (LCS/VCT)
+- [x] Auto-advance after 3 seconds
+- [x] "GET READY" countdown
 
-**3.3 Phaser Racing Game** ⭐ CORE
-- [ ] Phaser canvas in React
-- [ ] Pseudo-3D road (OutRun style)
-- [ ] Default vehicle: Car
-- [ ] Left/Right on-screen buttons
-- [ ] Boost button (costs 10 credits)
-- [ ] Obstacle spawning based on road type
-- [ ] Collision & speed reduction
-- [ ] Progress bar & timer
-- [ ] Road type indicator in HUD
+**3.3 Phaser Racing Game** ⭐ CORE — ⚠️ In Progress
+- [x] Phaser canvas in React
+- [x] Pseudo-3D road (OutRun style)
+- [x] Default vehicle: Car
+- [x] Left/Right on-screen buttons
+- [x] Boost button (costs 10 credits)
+- [x] Obstacle spawning based on road type
+- [x] Collision & speed reduction
+- [x] Progress bar & timer
+- [x] Road type indicator in HUD
+- [x] Steering range increased (±3.0), speed 8.0
+- [x] Car visual movement (not just road shift)
+- [ ] **⚠️ PENDING: Mobile touch responsiveness** — taps not registering, only long press works
 
 **3.4 Pit Stop Screen**
 - [ ] "Segment Complete" celebration
@@ -281,6 +284,36 @@
 **Next Session:**
 - Start Phase 3.2: City Reveal Screen (Auto-Advance)
 - Implement 3-second countdown to racing
+
+---
+
+### January 24, 2026 (Day 4) — Mobile & Steering Improvements
+
+**Completed:**
+- [x] Attempted tilt-to-steer controls for mobile (reverted - didn't work on Android)
+- [x] Fixed mobile viewport black space issue (100dvh + viewport-fit=cover)
+- [x] Increased steering range from ±1.0 to ±3.0 (car can move much further left/right)
+- [x] Increased steering speed to 8.0 (from original 1.8)
+- [x] Fixed road overlap issue when steering wide (car moves visually instead of road shifting)
+- [x] Moved player car position higher (140px from bottom instead of 50px) to avoid overlapping control buttons
+- [x] Unified control buttons UI for both mobile and desktop (consistent experience)
+- [x] Implemented native event listeners for touch handling (attempt to improve mobile responsiveness)
+- [x] Removed unused deviceDetect.js utility file
+
+**Code Changes (Uncommitted):**
+- `ControlButtons.jsx` - Native event listeners, unified UI for mobile/desktop
+- `RacingScene.js` - Steering speed 8.0, player car Y position -140px
+- `GameScreen.jsx` - Restructured layout with absolute positioning for HUD and controls
+
+**Known Issues (Pending):**
+- ⚠️ **Mobile Touch Responsiveness** - Tap on steering buttons requires long press on mobile; quick taps don't register reliably. Multiple approaches tried (React events, native events, pointer events). Needs further investigation.
+
+**Technical Notes:**
+- Steering range: -3.0 to 3.0 (playerX)
+- Steering speed multiplier: 8.0
+- Road shift reduced to 0.02/0.01 (was 0.25/0.12) to prevent road edges overlapping car
+- Car visual offset: `steerOffset = playerX * (width * 0.12)`
+- Player car Y: `height - 140` (above control buttons)
 
 ---
 
