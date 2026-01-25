@@ -305,13 +305,51 @@ export const AVATAR_CATEGORIES = {
 };
 
 // ============================================================================
+// SEGMENT & SPEED CONFIGURATION (Added Jan 24)
+// ============================================================================
+// Highly configurable - adjust based on testing
+
+export const SEGMENT_CONFIG = {
+  // Distance per segment (in km) - Segment 1, 2, 3
+  distances: [5, 7, 9],
+
+  // Starting speed for each segment (km/h display) - Segment 1, 2, 3
+  startSpeed: [125, 150, 175],
+
+  // Speed increases by this amount every 1 km traveled
+  speedIncreasePerKm: 5,
+
+  // Maximum speed cap (km/h)
+  maxSpeed: 200,
+};
+
+export const BOOST_CONFIG = {
+  // Boost adds this to current speed (km/h)
+  amount: 25,
+
+  // Boost lasts this many seconds (temporary)
+  duration: 3,
+
+  // Cooldown before boost can be used again (seconds)
+  cooldown: 10,
+};
+
+export const COLLISION_CONFIG = {
+  // Speed reduction on collision (percentage, 0.5 = 50% slowdown)
+  speedReduction: 0.5,
+
+  // How long the slowdown lasts (seconds)
+  slowdownDuration: 2,
+};
+
+// ============================================================================
 // GAME CONFIGURATION
 // ============================================================================
 
 export const GAME_CONFIG = {
   // Credits
   startingCredits: 200,
-  boostCost: 10,           // Cost per boost use (TBD - adjust after testing)
+  boostCost: 0,            // Boost is now FREE (system-driven cooldown)
 
   // Scoring
   basePoints: 500,
@@ -485,7 +523,9 @@ export const generateRouteSegments = (startCityId, difficulty = 'moderate') => {
   if (!city) return [];
 
   const diff = ROUTE_DIFFICULTIES[difficulty];
-  const waypoints = [...city.waypoints, 'Los Angeles'];
+  // Only use first 3 waypoints (waypoints array has 3 cities, last one leads to LA)
+  // This ensures exactly 3 segments: City → WP1 → WP2 → WP3/LA
+  const waypoints = city.waypoints.slice(0, 3);
 
   return waypoints.map((waypoint, index) => {
     // Determine road type based on difficulty distribution

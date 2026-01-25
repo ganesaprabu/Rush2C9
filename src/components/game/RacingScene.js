@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 import {
   VEHICLES,
   ROAD_TYPES,
-  GAME_CONFIG
+  SEGMENT_CONFIG,
+  BOOST_CONFIG,
+  COLLISION_CONFIG
 } from '../../data/gameData';
 
 /**
@@ -17,10 +19,13 @@ class RacingScene extends Phaser.Scene {
     this.onObstacleHit = callbacks.onObstacleHit || (() => {});
     this.onBoostUsed = callbacks.onBoostUsed || (() => {});
     this.onComplete = callbacks.onComplete || (() => {});
+    this.onStats = callbacks.onStats || (() => {}); // For speed & distance updates
+    this.onBoostReady = callbacks.onBoostReady || (() => {}); // For boost availability
 
     this.vehicleId = 'car';
     this.roadType = 'highway';
     this.credits = 200;
+    this.segmentIndex = 0; // 0-based segment index (0, 1, 2)
   }
 
   create() {
@@ -75,15 +80,56 @@ class RacingScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    // Start with some speed
+    // ========== CONFIGURABLE SPEED SYSTEM ==========
+    // Get segment-specific configuration
+    const segIdx = Math.min(this.segmentIndex, SEGMENT_CONFIG.distances.length - 1);
+
+    // Segment distance in km (from config)
+    this.segmentDistanceKm = SEGMENT_CONFIG.distances[segIdx];
+
+    // Base display speed for this segment (km/h)
+    this.baseDisplaySpeed = SEGMENT_CONFIG.startSpeed[segIdx];
+
+    // Current display speed (increases per km traveled)
+    this.currentDisplaySpeed = this.baseDisplaySpeed;
+
+    // Speed increase per km
+    this.speedIncreasePerKm = SEGMENT_CONFIG.speedIncreasePerKm;
+
+    // Max speed cap
+    this.maxDisplaySpeed = SEGMENT_CONFIG.maxSpeed;
+
+    // Start with some internal speed
     this.speed = this.maxSpeed * 0.5;
+
+    // ========== BOOST COOLDOWN SYSTEM ==========
+    this.boostCooldown = 0; // Time until boost is available again
+    this.boostAvailable = false; // Is boost ready to use?
+    this.boostCooldownDuration = BOOST_CONFIG.cooldown;
+    this.boostEffectDuration = BOOST_CONFIG.duration;
+    this.boostSpeedAmount = BOOST_CONFIG.amount;
+
+    // Start with boost available after initial delay (3 seconds)
+    this.boostCooldown = 3;
+
+    // ========== COLLISION CONFIG ==========
+    this.collisionSpeedReduction = COLLISION_CONFIG.speedReduction;
+    this.collisionSlowdownDuration = COLLISION_CONFIG.slowdownDuration;
+
+    // Throttle stats updates (don't update every frame)
+    this.lastStatsUpdate = 0;
+    this.statsUpdateInterval = 200; // Update every 200ms
+
+    // Track last km for speed increase
+    this.lastKmMilestone = 0;
   }
 
   buildTrack() {
     this.segments = [];
 
-    // Simple straight road - no curves for simplicity
-    const totalSegments = 350;
+    // Build enough segments to match the configured distance
+    // We use a fixed number for visual rendering, but trackLength is scaled by distance
+    const totalSegments = 500; // Enough for visual variety
     for (let i = 0; i < totalSegments; i++) {
       this.segments.push({
         index: i,
@@ -92,12 +138,16 @@ class RacingScene extends Phaser.Scene {
       });
     }
 
+    // TrackLength is set in create() after we know the segment distance
     this.trackLength = this.segments.length * this.segmentLength;
   }
 
   placeCars() {
     this.cars = [];
     const colors = [0x3388FF, 0x33CC33, 0xFFAA00, 0xCC3333, 0x9933CC];
+
+    // Calculate finish zone - last 15% of track has reduced traffic
+    const finishZoneStart = this.trackLength * 0.85;
 
     for (let i = 0; i < 12; i++) {
       // 40% go opposite direction (oncoming traffic - very fast relative to player)
@@ -118,8 +168,12 @@ class RacingScene extends Phaser.Scene {
         laneX = 0.2 + Math.random() * 0.5;  // Right side of road 0.2 to 0.7
       }
 
+      // Place cars only in first 85% of track (clear finish zone)
+      const maxZ = finishZoneStart - 100 * this.segmentLength;
+      const carZ = (50 + Math.random() * (maxZ / this.segmentLength - 50)) * this.segmentLength;
+
       this.cars.push({
-        z: (50 + Math.random() * (this.segments.length - 100)) * this.segmentLength,
+        z: carZ,
         x: laneX,
         speed: carSpeed,
         color: colors[i % colors.length],
@@ -131,6 +185,15 @@ class RacingScene extends Phaser.Scene {
   update(time, delta) {
     const dt = Math.min(delta / 1000, 0.1);
     this.elapsedTime += dt;
+
+    // ========== BOOST COOLDOWN SYSTEM ==========
+    if (!this.boostAvailable && !this.boosting) {
+      this.boostCooldown -= dt;
+      if (this.boostCooldown <= 0) {
+        this.boostAvailable = true;
+        this.onBoostReady(true); // Notify UI that boost is ready
+      }
+    }
 
     // Input - keyboard overrides external steer only when pressed
     if (this.cursors.left.isDown) this.steerDirection = -1;
@@ -153,16 +216,22 @@ class RacingScene extends Phaser.Scene {
       targetSpeed *= (roadData.baseSpeed || 1.0);
     }
 
-    // Boost
+    // Boost - temporary speed increase
     if (this.boosting) {
       targetSpeed *= 1.5;
       this.boostTimer -= dt;
-      if (this.boostTimer <= 0) this.boosting = false;
+      if (this.boostTimer <= 0) {
+        this.boosting = false;
+        // Start cooldown after boost ends
+        this.boostCooldown = this.boostCooldownDuration;
+        this.boostAvailable = false;
+        this.onBoostReady(false);
+      }
     }
 
-    // Hit slowdown
+    // Hit slowdown - uses config values
     if (this.isHit) {
-      targetSpeed *= 0.3;
+      targetSpeed *= this.collisionSpeedReduction;
       this.hitTimer -= dt;
       if (this.hitTimer <= 0) this.isHit = false;
     }
@@ -182,10 +251,8 @@ class RacingScene extends Phaser.Scene {
     // Move forward
     this.playerZ += this.speed * dt;
 
-    // Wrap track
-    while (this.playerZ >= this.trackLength) {
-      this.playerZ -= this.trackLength;
-    }
+    // DON'T wrap track - segment ends when we reach trackLength
+    // (removed wrap logic to allow segment completion)
 
     // Steering - playerX ranges from -3.0 to 3.0 (3x range for much more movement)
     const speedPct = this.speed / this.maxSpeed;
@@ -207,9 +274,48 @@ class RacingScene extends Phaser.Scene {
     // Collisions
     this.checkCollisions();
 
-    // Progress
+    // Calculate progress (needed for completion check)
     const progress = (this.playerZ / this.trackLength) * 100;
-    this.onProgress(Math.min(100, Math.floor(progress)));
+
+    // Stats updates - throttled to avoid fuzzy display
+    const now = Date.now();
+    if (now - this.lastStatsUpdate >= this.statsUpdateInterval) {
+      this.lastStatsUpdate = now;
+
+      this.onProgress(Math.min(100, Math.floor(progress)));
+
+      // Calculate distance traveled
+      const distanceKm = (this.playerZ / this.trackLength) * this.segmentDistanceKm;
+
+      // ========== SPEED PROGRESSION ==========
+      // Speed increases every 1 km traveled
+      const currentKm = Math.floor(distanceKm);
+      if (currentKm > this.lastKmMilestone) {
+        // Increase speed for each new km
+        const kmGained = currentKm - this.lastKmMilestone;
+        this.currentDisplaySpeed = Math.min(
+          this.maxDisplaySpeed,
+          this.currentDisplaySpeed + (kmGained * this.speedIncreasePerKm)
+        );
+        this.lastKmMilestone = currentKm;
+      }
+
+      // Calculate display speed (base + boost if active)
+      let displaySpeed = this.currentDisplaySpeed;
+      if (this.boosting) {
+        displaySpeed = Math.min(this.maxDisplaySpeed, displaySpeed + this.boostSpeedAmount);
+      }
+      // Reduce display speed if hit
+      if (this.isHit) {
+        displaySpeed = Math.floor(displaySpeed * this.collisionSpeedReduction);
+      }
+
+      this.onStats({
+        speed: displaySpeed,
+        distance: distanceKm,
+        totalDistance: this.segmentDistanceKm
+      });
+    }
 
     if (progress >= 100 && !this.completed) {
       this.completed = true;
@@ -230,16 +336,17 @@ class RacingScene extends Phaser.Scene {
       if (dz < -this.trackLength / 2) dz += this.trackLength;
       if (dz > this.trackLength / 2) dz -= this.trackLength;
 
-      // Collision box: car must be close in Z (within 150 units ahead or 50 behind)
-      // and close in X (lateral position)
-      const zCollision = dz > -50 && dz < 150;
-      const xCollision = Math.abs(car.x - this.playerX) < 0.5;
+      // IMPROVED COLLISION BOX:
+      // Z collision: car must be within 200 units ahead or 80 behind (wider range)
+      // X collision: lateral distance check with wider tolerance (0.7 instead of 0.5)
+      const zCollision = dz > -80 && dz < 200;
+      const xCollision = Math.abs(car.x - this.playerX) < 0.7;
 
       if (zCollision && xCollision && !this.isHit) {
         this.isHit = true;
-        this.hitTimer = 1.0;  // Shorter recovery time
+        this.hitTimer = this.collisionSlowdownDuration;  // From config
         this.obstaclesHit++;
-        this.speed *= 0.2;  // Bigger slowdown
+        this.speed *= this.collisionSpeedReduction;  // From config
         this.cameras.main.shake(400, 0.03);
         this.onObstacleHit();
 
@@ -275,6 +382,11 @@ class RacingScene extends Phaser.Scene {
     // Store projected segments for drawing
     const lines = [];
 
+    // Finish LINE (thin stripe) starts at 98% and ends at 100%
+    // This creates a classic racing finish line, not a checkered road
+    const finishLineStart = this.trackLength * 0.98;
+    const finishLineEnd = this.trackLength * 1.0;
+
     for (let n = 0; n < this.drawDistance; n++) {
       const segIndex = (baseSegmentIndex + n) % this.segments.length;
       const seg = this.segments[segIndex];
@@ -294,6 +406,10 @@ class RacingScene extends Phaser.Scene {
       const roadShift = -this.playerX * scale * this.roadWidth * 0.02;
       const w = scale * this.roadWidth;
 
+      // Check if this segment is ON the finish line (thin stripe, not whole zone)
+      const segmentZ = this.playerZ + camDist;
+      const isFinishLine = segmentZ >= finishLineStart && segmentZ <= finishLineEnd;
+
       lines.push({
         y: y,
         x: this.width / 2 + roadShift,
@@ -302,6 +418,7 @@ class RacingScene extends Phaser.Scene {
         color: seg.color,
         segIndex: segIndex,
         camDist: camDist,
+        isFinishLine: isFinishLine,
       });
     }
 
@@ -312,7 +429,7 @@ class RacingScene extends Phaser.Scene {
 
       if (!prev) continue;
 
-      this.drawRoadLine(line, prev);
+      this.drawRoadLine(line, prev, line.isFinishLine);
     }
 
     // Draw the closest road segment extending to the bottom of screen
@@ -326,7 +443,7 @@ class RacingScene extends Phaser.Scene {
         w: closest.w * 1.5,
         color: closest.color,
       };
-      this.drawRoadLine(closest, bottomLine);
+      this.drawRoadLine(closest, bottomLine, closest.isFinishLine);
     }
 
     // Draw traffic cars
@@ -336,7 +453,7 @@ class RacingScene extends Phaser.Scene {
     this.drawPlayerCar();
   }
 
-  drawRoadLine(line, prev) {
+  drawRoadLine(line, prev, isFinishLine = false) {
     const roadData = ROAD_TYPES[this.roadType];
     const roadColorHex = roadData?.color || '#696969';
     const roadColor = Phaser.Display.Color.HexStringToColor(roadColorHex).color;
@@ -383,8 +500,8 @@ class RacingScene extends Phaser.Scene {
     this.roadGraphics.closePath();
     this.roadGraphics.fillPath();
 
-    // Lane markings (on light segments only)
-    if (isLight && line.w > 20) {
+    // Lane markings (on light segments only) - unless on finish line
+    if (isLight && line.w > 20 && !isFinishLine) {
       this.roadGraphics.fillStyle(0xFFFFFF, 1);
       const dashW1 = Math.max(2, line.w * 0.015);
       const dashW2 = Math.max(2, prev.w * 0.015);
@@ -396,6 +513,32 @@ class RacingScene extends Phaser.Scene {
       this.roadGraphics.lineTo(prev.x - dashW2, prev.y);
       this.roadGraphics.closePath();
       this.roadGraphics.fillPath();
+    }
+
+    // Checkered finish line pattern (thin stripe at 98-100% of track)
+    if (isFinishLine && line.w > 15) {
+      const numSquares = 8; // Number of squares across the road
+      const squareW1 = (line.w * 2) / numSquares;
+      const squareW2 = (prev.w * 2) / numSquares;
+
+      for (let i = 0; i < numSquares; i++) {
+        // Alternate black and white
+        const isWhite = (i + (isLight ? 0 : 1)) % 2 === 0;
+        this.roadGraphics.fillStyle(isWhite ? 0xFFFFFF : 0x000000, 1);
+
+        const x1Left = line.x - line.w + i * squareW1;
+        const x1Right = x1Left + squareW1;
+        const x2Left = prev.x - prev.w + i * squareW2;
+        const x2Right = x2Left + squareW2;
+
+        this.roadGraphics.beginPath();
+        this.roadGraphics.moveTo(x1Left, line.y);
+        this.roadGraphics.lineTo(x1Right, line.y);
+        this.roadGraphics.lineTo(x2Right, prev.y);
+        this.roadGraphics.lineTo(x2Left, prev.y);
+        this.roadGraphics.closePath();
+        this.roadGraphics.fillPath();
+      }
     }
   }
 
@@ -611,13 +754,15 @@ class RacingScene extends Phaser.Scene {
   }
 
   activateBoost() {
-    if (this.boosting) return;
-    if (this.credits >= GAME_CONFIG.boostCost) {
-      this.boosting = true;
-      this.boostTimer = GAME_CONFIG.boostDuration;
-      this.cameras.main.flash(100, 255, 255, 0);
-      this.onBoostUsed();
-    }
+    // Only allow boost if available (cooldown system)
+    if (this.boosting || !this.boostAvailable) return;
+
+    this.boosting = true;
+    this.boostAvailable = false;
+    this.boostTimer = this.boostEffectDuration;
+    this.cameras.main.flash(100, 255, 255, 0);
+    this.onBoostUsed();
+    this.onBoostReady(false); // Notify UI boost is no longer available
   }
 
   setVehicle(vehicleId) {
@@ -630,6 +775,10 @@ class RacingScene extends Phaser.Scene {
 
   setCredits(credits) {
     this.credits = credits;
+  }
+
+  setSegmentIndex(index) {
+    this.segmentIndex = index;
   }
 }
 

@@ -53,12 +53,16 @@ function GameScreen() {
 
   // UI state
   const [countdown, setCountdown] = useState(3);
-  const [pitStopCountdown, setPitStopCountdown] = useState(5);
 
   // Racing state
   const [progress, setProgress] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isBoosting, setIsBoosting] = useState(false);
+  const [boostReady, setBoostReady] = useState(false); // System-driven boost availability
+  const [speed, setSpeed] = useState(0);
+  const [distance, setDistance] = useState(0);
+  const [totalDistance, setTotalDistance] = useState(5);
+  const [showCelebration, setShowCelebration] = useState(false); // Confetti overlay on finish
   const gameContainerRef = useRef(null);
 
   // Get destination info
@@ -81,15 +85,20 @@ function GameScreen() {
       setSegmentResults((prev) => [...prev, { time, obstaclesHit }]);
       setTotalTime((prev) => prev + time);
 
-      // Check if journey complete
-      if (currentSegment >= 2) {
-        // All 3 segments done
-        setGameState('results');
-      } else {
-        // More segments remaining - show pit stop
-        setPitStopCountdown(5);
-        setGameState('pit_stop');
-      }
+      // Show celebration overlay on the racing screen!
+      setShowCelebration(true);
+
+      // After 5 seconds, transition to pit stop or results
+      setTimeout(() => {
+        setShowCelebration(false);
+        if (currentSegment >= 2) {
+          // All 3 segments done - go to results
+          setGameState('results');
+        } else {
+          // More segments - go to pit stop
+          setGameState('pit_stop');
+        }
+      }, 5000);
     },
     [currentSegment]
   );
@@ -118,19 +127,8 @@ function GameScreen() {
     }
   }, [gameState, countdown]);
 
-  // Pit Stop countdown → Racing
-  useEffect(() => {
-    if (gameState === 'pit_stop') {
-      const timer = setTimeout(() => {
-        if (pitStopCountdown > 1) {
-          setPitStopCountdown((prev) => prev - 1);
-        } else {
-          handleContinueRacing();
-        }
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [gameState, pitStopCountdown, handleContinueRacing]);
+  // Pit Stop - NO auto-countdown anymore
+  // User must click to proceed to next segment
 
   // Racing timer - track elapsed time
   useEffect(() => {
@@ -161,17 +159,30 @@ function GameScreen() {
     setProgress(progressValue);
   }, []);
 
+  // Stats update from Phaser (speed, distance)
+  const handleStats = useCallback((stats) => {
+    setSpeed(stats.speed);
+    setDistance(stats.distance);
+    setTotalDistance(stats.totalDistance);
+  }, []);
+
   // Obstacle hit callback
   const handleObstacleHit = useCallback(() => {
     // Visual feedback could be added here
   }, []);
 
-  // Boost used - deduct credits
+  // Boost used - no longer deducts credits (system-driven)
   const handleBoostUsed = useCallback(() => {
-    setCredits((prev) => Math.max(0, prev - GAME_CONFIG.boostCost));
     setIsBoosting(true);
-    // Reset boosting state after duration
-    setTimeout(() => setIsBoosting(false), GAME_CONFIG.boostDuration * 1000);
+    setBoostReady(false);
+  }, []);
+
+  // Boost ready state changed (from Phaser)
+  const handleBoostReady = useCallback((ready) => {
+    setBoostReady(ready);
+    if (!ready) {
+      setIsBoosting(false);
+    }
   }, []);
 
   // Steer control - pass to Phaser
@@ -181,12 +192,12 @@ function GameScreen() {
     }
   }, []);
 
-  // Boost control - pass to Phaser
+  // Boost control - pass to Phaser (now cooldown-based, not credit-based)
   const handleBoostPress = useCallback(() => {
-    if (gameContainerRef.current?.handleBoost && credits >= GAME_CONFIG.boostCost) {
+    if (gameContainerRef.current?.handleBoost && boostReady) {
       gameContainerRef.current.handleBoost();
     }
-  }, [credits]);
+  }, [boostReady]);
 
   // Calculate final score (rounded to whole number)
   const calculateScore = useCallback(() => {
@@ -261,7 +272,6 @@ function GameScreen() {
   // Racing state with Phaser game
   if (gameState === 'racing') {
     const segment = segments[currentSegment];
-    const roadTypeData = ROAD_TYPES[segment?.roadType];
 
     return (
       <div className="h-[100dvh] bg-[#0a0a0a] text-white overflow-hidden relative">
@@ -273,9 +283,12 @@ function GameScreen() {
             vehicleId={currentVehicle}
             roadType={segment?.roadType || 'highway'}
             credits={credits}
+            segmentIndex={currentSegment}
             onProgress={handleProgress}
+            onStats={handleStats}
             onObstacleHit={handleObstacleHit}
             onBoostUsed={handleBoostUsed}
+            onBoostReady={handleBoostReady}
             onSegmentComplete={handleSegmentComplete}
           />
         </div>
@@ -286,12 +299,11 @@ function GameScreen() {
             credits={credits}
             progress={progress}
             time={elapsedTime}
-            roadType={roadTypeData}
-            segmentInfo={{
-              current: currentSegment + 1,
-              from: segment?.from,
-              to: segment?.to
-            }}
+            speed={speed}
+            distance={distance}
+            totalDistance={totalDistance}
+            segmentNumber={currentSegment + 1}
+            totalSegments={segments.length}
             isBoosting={isBoosting}
           />
         </div>
@@ -301,11 +313,72 @@ function GameScreen() {
           <ControlButtons
             onSteer={handleSteer}
             onBoost={handleBoostPress}
-            credits={credits}
-            canBoost={credits >= GAME_CONFIG.boostCost}
+            boostReady={boostReady}
             isBoosting={isBoosting}
           />
         </div>
+
+        {/* Celebration Overlay - shows on finish line */}
+        {showCelebration && (
+          <>
+            {/* Confetti particles */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden z-30">
+              {[...Array(50)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute animate-confetti"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `-20px`,
+                    animationDelay: `${Math.random() * 0.5}s`,
+                    animationDuration: `${2 + Math.random() * 1.5}s`,
+                  }}
+                >
+                  <div
+                    className="w-3 h-3 rounded-sm"
+                    style={{
+                      backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'][i % 8],
+                      transform: `rotate(${Math.random() * 360}deg)`,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Celebration message overlay */}
+            <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
+              <div className="text-center bg-black/70 backdrop-blur-sm rounded-2xl px-8 py-6 mx-4">
+                <div className="text-6xl mb-2 animate-bounce">🏁</div>
+                <h1 className="text-2xl font-bold text-white mb-1 animate-pulse">
+                  {currentSegment >= 2 ? 'JOURNEY COMPLETE!' : 'SEGMENT COMPLETE!'}
+                </h1>
+                <p className="text-cyan-400">
+                  {segments[currentSegment]?.from} → {segments[currentSegment]?.to}
+                </p>
+                <p className="text-yellow-400 text-xl font-bold mt-2">
+                  ⏱️ {elapsedTime.toFixed(1)}s
+                </p>
+              </div>
+            </div>
+
+            {/* Confetti animation styles */}
+            <style>{`
+              @keyframes confetti {
+                0% {
+                  transform: translateY(0) rotate(0deg);
+                  opacity: 1;
+                }
+                100% {
+                  transform: translateY(100vh) rotate(720deg);
+                  opacity: 0;
+                }
+              }
+              .animate-confetti {
+                animation: confetti linear forwards;
+              }
+            `}</style>
+          </>
+        )}
       </div>
     );
   }
@@ -425,13 +498,16 @@ function GameScreen() {
             </div>
           </div>
 
-          {/* Continue button with countdown */}
+          {/* Continue button - user must click to proceed */}
           <button
             onClick={handleContinueRacing}
-            className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg transition-all"
+            className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg transition-all animate-pulse"
           >
-            Keep {currentVehicleData?.emoji} {currentVehicleData?.name} — Continue ({pitStopCountdown}s)
+            🏁 Continue to Segment {currentSegment + 2}
           </button>
+          <p className="text-center text-gray-400 text-sm mt-2">
+            Using {currentVehicleData?.emoji} {currentVehicleData?.name}
+          </p>
         </div>
       </div>
     );

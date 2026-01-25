@@ -10,28 +10,34 @@ import RacingScene from './RacingScene';
  * - vehicleId: Current vehicle (e.g., 'car', 'bike')
  * - roadType: Current road type (e.g., 'highway', 'mud')
  * - credits: Current credits available
+ * - segmentIndex: Current segment (0, 1, 2)
  * - onProgress: Callback when progress updates (0-100)
+ * - onStats: Callback for speed/distance updates
  * - onObstacleHit: Callback when hitting obstacle
- * - onBoostUsed: Callback when boost is used (deduct credits)
+ * - onBoostUsed: Callback when boost is used
+ * - onBoostReady: Callback when boost becomes available/unavailable
  * - onSegmentComplete: Callback when segment is done (time, obstaclesHit)
  */
 const PhaserGame = forwardRef(function PhaserGame({
   vehicleId = 'car',
   roadType = 'highway',
   credits = 200,
+  segmentIndex = 0,
   onProgress,
+  onStats,
   onObstacleHit,
   onBoostUsed,
+  onBoostReady,
   onSegmentComplete
 }, ref) {
   const gameRef = useRef(null);
   const containerRef = useRef(null);
-  const callbacksRef = useRef({ onProgress, onObstacleHit, onBoostUsed, onSegmentComplete });
+  const callbacksRef = useRef({ onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete });
 
   // Keep callbacks up to date
   useEffect(() => {
-    callbacksRef.current = { onProgress, onObstacleHit, onBoostUsed, onSegmentComplete };
-  }, [onProgress, onObstacleHit, onBoostUsed, onSegmentComplete]);
+    callbacksRef.current = { onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete };
+  }, [onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete]);
 
   // Initialize Phaser game
   useEffect(() => {
@@ -40,8 +46,10 @@ const PhaserGame = forwardRef(function PhaserGame({
     // Create the scene instance with callbacks (use refs for stable references)
     const racingScene = new RacingScene({
       onProgress: (progress) => callbacksRef.current.onProgress?.(progress),
+      onStats: (stats) => callbacksRef.current.onStats?.(stats),
       onObstacleHit: () => callbacksRef.current.onObstacleHit?.(),
       onBoostUsed: () => callbacksRef.current.onBoostUsed?.(),
+      onBoostReady: (ready) => callbacksRef.current.onBoostReady?.(ready),
       onComplete: (time, obstaclesHit) => callbacksRef.current.onSegmentComplete?.(time, obstaclesHit)
     });
 
@@ -108,6 +116,16 @@ const PhaserGame = forwardRef(function PhaserGame({
       }
     }
   }, [credits]);
+
+  // Update segment index when it changes
+  useEffect(() => {
+    if (gameRef.current && gameRef.current.scene.scenes[0]) {
+      const scene = gameRef.current.scene.scenes[0];
+      if (scene.setSegmentIndex) {
+        scene.setSegmentIndex(segmentIndex);
+      }
+    }
+  }, [segmentIndex]);
 
   // Handle steering input (called from external controls)
   const handleSteer = useCallback((direction) => {

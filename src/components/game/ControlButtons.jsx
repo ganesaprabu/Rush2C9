@@ -1,16 +1,15 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { GAME_CONFIG } from '../../data/gameData';
 
 /**
  * ControlButtons - Touch/Mouse controls for racing game
  *
  * Uses native event listeners for immediate touch response
+ * Boost is now system-driven (cooldown-based, not credit-based)
  */
 function ControlButtons({
   onSteer,
   onBoost,
-  credits = 200,
-  canBoost = true,
+  boostReady = false,  // System-driven: is boost available?
   isBoosting = false
 }) {
   const steerIntervalRef = useRef(null);
@@ -24,17 +23,15 @@ function ControlButtons({
   // Store callbacks in refs to avoid stale closures
   const onSteerRef = useRef(onSteer);
   const onBoostRef = useRef(onBoost);
-  const canBoostRef = useRef(canBoost);
+  const boostReadyRef = useRef(boostReady);
   const isBoostingRef = useRef(isBoosting);
-  const creditsRef = useRef(credits);
 
   useEffect(() => {
     onSteerRef.current = onSteer;
     onBoostRef.current = onBoost;
-    canBoostRef.current = canBoost;
+    boostReadyRef.current = boostReady;
     isBoostingRef.current = isBoosting;
-    creditsRef.current = credits;
-  }, [onSteer, onBoost, canBoost, isBoosting, credits]);
+  }, [onSteer, onBoost, boostReady, isBoosting]);
 
   // Start steering function
   const startSteer = useCallback((direction, button) => {
@@ -60,9 +57,9 @@ function ControlButtons({
     onSteerRef.current?.(0);
   }, []);
 
-  // Handle boost
+  // Handle boost - only if ready and not already boosting
   const handleBoost = useCallback(() => {
-    if (canBoostRef.current && !isBoostingRef.current && creditsRef.current >= GAME_CONFIG.boostCost) {
+    if (boostReadyRef.current && !isBoostingRef.current) {
       onBoostRef.current?.();
     }
   }, []);
@@ -150,8 +147,6 @@ function ControlButtons({
     };
   }, [startSteer, stopSteer, handleBoost]);
 
-  const boostDisabled = !canBoost || isBoosting || credits < GAME_CONFIG.boostCost;
-
   // Prevent any text selection or context menu
   const containerStyle = {
     WebkitTouchCallout: 'none',
@@ -181,19 +176,19 @@ function ControlButtons({
           ◀
         </div>
 
-        {/* Boost button */}
+        {/* Boost button - system-driven availability */}
         <div
           ref={boostBtnRef}
-          className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-center cursor-pointer ${
+          className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-center cursor-pointer transition-all ${
             isBoosting
               ? 'bg-yellow-500 text-black animate-pulse'
-              : boostDisabled
-                ? 'bg-gray-700/50 text-gray-500'
-                : 'bg-orange-600 text-white'
+              : boostReady
+                ? 'bg-orange-600 text-white animate-pulse'
+                : 'bg-gray-700/50 text-gray-500'
           }`}
           style={containerStyle}
         >
-          {isBoosting ? '🚀 BOOST!' : `🚀 BOOST (${GAME_CONFIG.boostCost}💳)`}
+          {isBoosting ? '🚀 BOOSTING!' : boostReady ? '🚀 BOOST READY!' : '🚀 BOOST'}
         </div>
 
         {/* Right button */}

@@ -1,60 +1,81 @@
 /**
- * GameHUD - Heads-up display overlay for racing game
+ * GameHUD - Compact single-row heads-up display
  *
- * Displays: Credits, Progress bar, Timer, Road type, Segment info
+ * Displays: Segment | Credits | Time | Speed | Distance | Progress
  */
 function GameHUD({
   credits = 200,
   progress = 0,
   time = 0,
-  roadType = {},
-  segmentInfo = {},
+  speed = 0,
+  distance = 0,
+  // totalDistance - not displayed but kept for potential future use
+  segmentNumber = 1,
+  totalSegments = 3,
   isBoosting = false
 }) {
+  // Format time as seconds
+  const timeDisplay = Math.floor(time);
+
+  // Format distance
+  const distanceDisplay = distance.toFixed(1);
+
+  // Stabilize speed (round to nearest 5)
+  const speedDisplay = Math.round(speed / 5) * 5;
+
   return (
-    <div className="absolute inset-x-0 top-0 p-3 pointer-events-none">
-      {/* Top row: Credits and Timer */}
-      <div className="flex justify-between items-start mb-2">
+    <div className="p-2 pointer-events-none">
+      {/* Single compact row - 2x height */}
+      <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-3 flex items-center justify-between gap-2 text-sm">
+        {/* Segment */}
+        <div className="flex items-center gap-1">
+          <span className="text-gray-400">Seg</span>
+          <span className="font-bold text-white">{segmentNumber}/{totalSegments}</span>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-gray-600" />
+
         {/* Credits */}
-        <div className="bg-black/60 rounded-lg px-3 py-1.5 backdrop-blur-sm">
-          <p className="text-xs text-gray-400">Credits</p>
-          <p className="text-lg font-bold text-yellow-400">💳 {credits}</p>
+        <div className="flex items-center gap-1">
+          <span className="text-yellow-400">💳</span>
+          <span className="font-bold text-yellow-400">{credits}</span>
         </div>
 
-        {/* Timer */}
-        <div className="bg-black/60 rounded-lg px-3 py-1.5 backdrop-blur-sm text-right">
-          <p className="text-xs text-gray-400">Time</p>
-          <p className="text-lg font-bold text-white">{time.toFixed(1)}s</p>
-        </div>
-      </div>
+        {/* Divider */}
+        <div className="w-px h-5 bg-gray-600" />
 
-      {/* Segment info */}
-      <div className="bg-black/60 rounded-lg px-3 py-2 backdrop-blur-sm mb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{roadType?.emoji || '🛣️'}</span>
-            <div>
-              <p className="text-xs text-gray-400">Segment {segmentInfo?.current || 1}/3</p>
-              <p className="text-sm font-semibold text-white">
-                {segmentInfo?.from || 'Start'} → {segmentInfo?.to || 'Waypoint'}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-400">{roadType?.name || 'Road'}</p>
-          </div>
+        {/* Time */}
+        <div className="flex items-center gap-1">
+          <span>⏱️</span>
+          <span className="font-bold text-white">{timeDisplay}s</span>
         </div>
-      </div>
 
-      {/* Progress bar */}
-      <div className="bg-black/60 rounded-lg p-2 backdrop-blur-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs text-gray-400">Progress</span>
-          <span className="text-xs font-bold text-white ml-auto">{Math.floor(progress)}%</span>
+        {/* Divider */}
+        <div className="w-px h-5 bg-gray-600" />
+
+        {/* Speed */}
+        <div className="flex items-center gap-1">
+          <span>🚗</span>
+          <span className={`font-bold ${isBoosting ? 'text-yellow-400' : 'text-cyan-400'}`}>{speedDisplay}</span>
         </div>
-        <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-gray-600" />
+
+        {/* Distance */}
+        <div className="flex items-center gap-1">
+          <span>📍</span>
+          <span className="font-bold text-white">{distanceDisplay}km</span>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-5 bg-gray-600" />
+
+        {/* Progress bar only */}
+        <div className="flex-1 h-3 bg-gray-700 rounded-full overflow-hidden min-w-12">
           <div
-            className={`h-full rounded-full transition-all duration-200 ${
+            className={`h-full rounded-full transition-all duration-300 ${
               isBoosting ? 'bg-yellow-400' : 'bg-gradient-to-r from-blue-500 to-cyan-400'
             }`}
             style={{ width: `${progress}%` }}
