@@ -6,6 +6,12 @@ import {
   BOOST_CONFIG,
   COLLISION_CONFIG
 } from '../../data/gameData';
+import {
+  NOTIFICATION_CONFIG,
+  getRandomCloudMessage,
+  getRandomTip,
+  getRandomAnnouncement
+} from '../../data/notificationData';
 
 /**
  * RacingScene - Simple pseudo-3D racing
@@ -122,6 +128,27 @@ class RacingScene extends Phaser.Scene {
 
     // Track last km for speed increase
     this.lastKmMilestone = 0;
+
+    // ========== NOTIFICATION SYSTEM ==========
+    this.initNotifications();
+  }
+
+  initNotifications() {
+    // Cloud notification state (sky area - branding messages with zoom effect)
+    this.cloudMessage = null;           // Current cloud message text
+    this.cloudActive = false;           // Is cloud currently animating?
+    this.cloudProgress = 0;             // Animation progress 0-1
+    this.cloudDirection = 1;            // 1 = left-to-right, -1 = right-to-left
+    this.cloudAnimDuration = NOTIFICATION_CONFIG.clouds.animationDuration;
+    this.cloudInterval = NOTIFICATION_CONFIG.clouds.interval;
+    this.cloudEnabled = NOTIFICATION_CONFIG.clouds.enabled;
+    this.cloudTimer = 3000;             // First cloud after 3 seconds
+
+    // Billboard notification state (grass area) - DISABLED FOR NOW
+    this.billboardEnabled = NOTIFICATION_CONFIG.billboards.enabled;
+
+    // Overhead banner state - DISABLED FOR NOW
+    this.bannerEnabled = NOTIFICATION_CONFIG.banners.enabled;
   }
 
   buildTrack() {
@@ -323,6 +350,9 @@ class RacingScene extends Phaser.Scene {
       return;
     }
 
+    // Update notifications
+    this.updateNotifications(dt);
+
     // Render
     this.render();
   }
@@ -449,8 +479,16 @@ class RacingScene extends Phaser.Scene {
     // Draw traffic cars
     this.drawTraffic(lines);
 
+    // Draw notifications (billboards on grass, banners overhead)
+    this.hideNotificationTexts(); // Reset visibility
+    this.drawBillboardNotification(lines);
+    this.drawBannerNotification(lines);
+
     // Draw player car
     this.drawPlayerCar();
+
+    // Draw cloud notification (on top of everything in sky)
+    this.drawCloudNotification();
   }
 
   drawRoadLine(line, prev, isFinishLine = false) {
@@ -779,6 +817,141 @@ class RacingScene extends Phaser.Scene {
 
   setSegmentIndex(index) {
     this.segmentIndex = index;
+  }
+
+  // ========== NOTIFICATION SYSTEM METHODS ==========
+
+  updateNotifications(dt) {
+    const deltaMs = dt * 1000;
+
+    // Update cloud notification (zoom effect from center)
+    if (this.cloudEnabled) {
+      if (!this.cloudActive) {
+        // Wait for timer to spawn new cloud
+        this.cloudTimer -= deltaMs;
+        if (this.cloudTimer <= 0) {
+          // Start new cloud animation
+          this.cloudMessage = getRandomCloudMessage();
+          this.cloudActive = true;
+          this.cloudProgress = 0;
+          // Randomly choose direction: 1 = exits right, -1 = exits left
+          this.cloudDirection = Math.random() < 0.5 ? 1 : -1;
+        }
+      } else {
+        // Animate cloud (zoom from dot to full size, moving diagonally)
+        this.cloudProgress += deltaMs / this.cloudAnimDuration;
+        if (this.cloudProgress >= 1) {
+          // Animation complete, reset
+          this.cloudActive = false;
+          this.cloudTimer = this.cloudInterval;
+          this.cloudMessage = null;
+        }
+      }
+    }
+
+    // Billboard and banner disabled for now
+  }
+
+  drawCloudNotification() {
+    if (!this.cloudActive || !this.cloudMessage || !this.cloudEnabled) return;
+
+    // Hide text when not needed
+    if (this.cloudText) this.cloudText.setVisible(false);
+
+    const horizon = this.height * 0.35;
+    const progress = this.cloudProgress; // 0 to 1
+
+    // ========== ANIMATION PHASES ==========
+    // Phase 1: 0.00 - 0.15 = Fade in + start zoom (15%)
+    // Phase 2: 0.15 - 0.80 = Moving/scaling to full size (65%)
+    // Phase 3: 0.80 - 1.00 = PAUSE at full size (~1.4 seconds), then disappear instantly
+
+    // Calculate movement progress (capped during pause phase)
+    let moveProgress;
+    if (progress <= 0.80) {
+      // Normal movement during phases 1-2
+      moveProgress = progress / 0.80; // 0 to 1 over first 80% of animation
+    } else {
+      // Pause phase - stay at full position until disappearing
+      moveProgress = 1.0;
+    }
+
+    // Easing function for smooth zoom (ease-out)
+    const easeOut = 1 - Math.pow(1 - Math.min(moveProgress, 1), 3);
+
+    // Scale: starts tiny (0.1), grows to full (1.0), stays at 1.0 during pause
+    const scale = Math.min(1.0, 0.1 + easeOut * 0.9);
+
+    // Position: starts at center-top, moves diagonally toward edge
+    const startX = this.width / 2;
+    const startY = horizon * 0.25;
+
+    // End position based on direction (pause position)
+    const pauseX = this.cloudDirection > 0 ? this.width * 0.65 : this.width * 0.35;
+    const endY = horizon * 0.5;
+
+    // Calculate current X (moves to pause position, stays there)
+    const cx = startX + (pauseX - startX) * easeOut;
+    const cy = startY + (endY - startY) * easeOut + Math.sin(this.elapsedTime * 3) * 5 * scale;
+
+    // Cloud base sizes (will be multiplied by scale)
+    const baseRadius = 35;
+
+    // Cloud opacity (fade in at start only, then full until instant disappear)
+    let opacity = 1;
+    if (progress < 0.15) {
+      opacity = progress / 0.15; // Fade in only
+    }
+    // No fade out - cloud disappears instantly at progress = 1.0
+
+    // Draw cloud shape (multiple overlapping circles for fluffy look)
+    this.bgGraphics.fillStyle(0xFFFFFF, opacity * 0.95);
+
+    // Main cloud body - scaled (pure white, no shadow)
+    const r = baseRadius * scale;
+    this.bgGraphics.fillCircle(cx, cy, r);
+    this.bgGraphics.fillCircle(cx - r * 0.7, cy + r * 0.2, r * 0.7);
+    this.bgGraphics.fillCircle(cx + r * 0.7, cy + r * 0.2, r * 0.7);
+    this.bgGraphics.fillCircle(cx - r * 0.4, cy - r * 0.4, r * 0.6);
+    this.bgGraphics.fillCircle(cx + r * 0.4, cy - r * 0.4, r * 0.6);
+
+    // Draw text INSIDE the cloud - scales together with cloud from the start
+    if (!this.cloudText) {
+      this.cloudText = this.add.text(0, 0, '', {
+        fontSize: '14px',
+        fontFamily: 'Arial Black, Arial, sans-serif',
+        color: '#1a5276',
+        align: 'center',
+        fontStyle: 'bold',
+      });
+      this.cloudText.setOrigin(0.5);
+      this.cloudText.setDepth(100);
+    }
+
+    // Scale font size with cloud (text grows from dot along with cloud)
+    const baseFontSize = 18;
+    const fontSize = Math.max(1, Math.floor(baseFontSize * scale));
+    this.cloudText.setFontSize(fontSize);
+    this.cloudText.setPosition(cx, cy);
+    this.cloudText.setText(this.cloudMessage);
+    this.cloudText.setAlpha(opacity);
+    this.cloudText.setScale(scale); // Additional scaling for smooth dot-to-full effect
+    this.cloudText.setVisible(true);
+  }
+
+  drawBillboardNotification(lines) {
+    // Disabled for now
+    if (!this.billboardEnabled) return;
+  }
+
+  drawBannerNotification(lines) {
+    // Disabled for now
+    if (!this.bannerEnabled) return;
+  }
+
+  hideNotificationTexts() {
+    // Hide text objects when not in use
+    if (this.cloudText) this.cloudText.setVisible(false);
   }
 }
 
