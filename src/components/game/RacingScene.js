@@ -131,6 +131,142 @@ class RacingScene extends Phaser.Scene {
 
     // ========== NOTIFICATION SYSTEM ==========
     this.initNotifications();
+
+    // ========== COUNTDOWN START SEQUENCE ==========
+    this.initCountdown();
+  }
+
+  initCountdown() {
+    this.countdownActive = true;
+    this.countdownTime = 0;
+    this.countdownPhase = 0; // 0=3, 1=2, 2=1, 3=GO!, 4=done
+    this.countdownPhaseDuration = 0.8; // seconds per phase
+
+    // Car starts stationary during countdown
+    this.speed = 0;
+
+    // Create countdown graphics layer (on top of everything)
+    this.countdownGraphics = this.add.graphics();
+    this.countdownGraphics.setDepth(200);
+
+    // Create countdown text
+    this.countdownText = this.add.text(this.width / 2, this.height * 0.35, '3', {
+      fontSize: '120px',
+      fontFamily: 'Arial Black, Impact, sans-serif',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 8,
+    });
+    this.countdownText.setOrigin(0.5);
+    this.countdownText.setDepth(201);
+  }
+
+  updateCountdown(dt) {
+    this.countdownTime += dt;
+
+    // Check for phase transitions
+    const newPhase = Math.floor(this.countdownTime / this.countdownPhaseDuration);
+
+    if (newPhase !== this.countdownPhase && newPhase <= 4) {
+      this.countdownPhase = newPhase;
+
+      // Update text for each phase
+      if (this.countdownPhase === 0) {
+        this.countdownText.setText('3');
+        this.countdownText.setColor('#ff4444'); // Red
+      } else if (this.countdownPhase === 1) {
+        this.countdownText.setText('2');
+        this.countdownText.setColor('#ffaa00'); // Orange
+      } else if (this.countdownPhase === 2) {
+        this.countdownText.setText('1');
+        this.countdownText.setColor('#ffff00'); // Yellow
+      } else if (this.countdownPhase === 3) {
+        this.countdownText.setText('GO!');
+        this.countdownText.setColor('#44ff44'); // Green
+        this.countdownText.setFontSize(100);
+      } else if (this.countdownPhase === 4) {
+        // Countdown complete - start racing!
+        this.countdownActive = false;
+        this.countdownText.setVisible(false);
+        this.countdownGraphics.setVisible(false);
+
+        // Start with initial speed
+        this.speed = this.maxSpeed * 0.5;
+      }
+    }
+  }
+
+  drawCountdown() {
+    if (!this.countdownActive) return;
+
+    this.countdownGraphics.clear();
+
+    const cx = this.width / 2;
+    const cy = this.height * 0.35;
+
+    // Draw traffic light board (like reference image)
+    const boardWidth = 280;
+    const boardHeight = 100;
+    const boardX = cx - boardWidth / 2;
+    const boardY = cy - boardHeight / 2 - 20;
+
+    // Support poles
+    this.countdownGraphics.fillStyle(0x4a3728, 1);
+    this.countdownGraphics.fillRect(cx - 60, 0, 12, boardY);
+    this.countdownGraphics.fillRect(cx + 48, 0, 12, boardY);
+
+    // Main board
+    this.countdownGraphics.fillStyle(0x3d2817, 1);
+    this.countdownGraphics.fillRoundedRect(boardX, boardY, boardWidth, boardHeight, 8);
+
+    // Board border
+    this.countdownGraphics.lineStyle(4, 0x2a1a0f, 1);
+    this.countdownGraphics.strokeRoundedRect(boardX, boardY, boardWidth, boardHeight, 8);
+
+    // Corner bolts
+    const boltSize = 8;
+    this.countdownGraphics.fillStyle(0x5a4a3a, 1);
+    this.countdownGraphics.fillCircle(boardX + 15, boardY + 15, boltSize);
+    this.countdownGraphics.fillCircle(boardX + boardWidth - 15, boardY + 15, boltSize);
+    this.countdownGraphics.fillCircle(boardX + 15, boardY + boardHeight - 15, boltSize);
+    this.countdownGraphics.fillCircle(boardX + boardWidth - 15, boardY + boardHeight - 15, boltSize);
+
+    // Three light positions
+    const lightRadius = 30;
+    const lightY = boardY + boardHeight / 2;
+    const lightSpacing = 75;
+
+    // Light 3 (left) - Red when phase 0
+    this.drawCountdownLight(cx - lightSpacing, lightY, lightRadius, this.countdownPhase === 0 ? 0xff4444 : 0x331111);
+
+    // Light 2 (middle) - Orange when phase 1
+    this.drawCountdownLight(cx, lightY, lightRadius, this.countdownPhase === 1 ? 0xffaa00 : 0x332200);
+
+    // Light 1 (right) - Green when phase 2 or 3
+    this.drawCountdownLight(cx + lightSpacing, lightY, lightRadius, (this.countdownPhase >= 2) ? 0x44ff44 : 0x113311);
+
+    // Animate the current countdown number (pulse effect)
+    const phaseProgress = (this.countdownTime % this.countdownPhaseDuration) / this.countdownPhaseDuration;
+    const scale = 1 + Math.sin(phaseProgress * Math.PI) * 0.15;
+    this.countdownText.setScale(scale);
+    this.countdownText.setPosition(cx, cy + 80);
+  }
+
+  drawCountdownLight(x, y, radius, color) {
+    // Outer ring (darker)
+    this.countdownGraphics.fillStyle(0x1a1a1a, 1);
+    this.countdownGraphics.fillCircle(x, y, radius + 4);
+
+    // Inner glow
+    this.countdownGraphics.fillStyle(color, 1);
+    this.countdownGraphics.fillCircle(x, y, radius);
+
+    // Highlight (top-left)
+    if (color !== 0x331111 && color !== 0x332200 && color !== 0x113311) {
+      // Only add glow for active lights
+      this.countdownGraphics.fillStyle(0xffffff, 0.3);
+      this.countdownGraphics.fillCircle(x - radius * 0.3, y - radius * 0.3, radius * 0.4);
+    }
   }
 
   initNotifications() {
@@ -142,7 +278,7 @@ class RacingScene extends Phaser.Scene {
     this.cloudAnimDuration = NOTIFICATION_CONFIG.clouds.animationDuration;
     this.cloudInterval = NOTIFICATION_CONFIG.clouds.interval;
     this.cloudEnabled = NOTIFICATION_CONFIG.clouds.enabled;
-    this.cloudTimer = 3000;             // First cloud after 3 seconds
+    this.cloudTimer = 6000;             // First cloud after countdown + 3 seconds
 
     // Billboard notification state (grass area) - DISABLED FOR NOW
     this.billboardEnabled = NOTIFICATION_CONFIG.billboards.enabled;
@@ -211,6 +347,15 @@ class RacingScene extends Phaser.Scene {
 
   update(time, delta) {
     const dt = Math.min(delta / 1000, 0.1);
+
+    // ========== COUNTDOWN SEQUENCE ==========
+    if (this.countdownActive) {
+      this.updateCountdown(dt);
+      this.render(); // Still render the scene during countdown
+      this.drawCountdown();
+      return; // Don't update game logic during countdown
+    }
+
     this.elapsedTime += dt;
 
     // ========== BOOST COOLDOWN SYSTEM ==========
