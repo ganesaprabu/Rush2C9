@@ -322,28 +322,34 @@ class RacingScene extends Phaser.Scene {
     // Calculate finish zone - last 15% of track has reduced traffic
     const finishZoneStart = this.trackLength * 0.85;
 
+    // Alternate sides for balanced traffic
+    let lastSide = 1;
+
     for (let i = 0; i < 12; i++) {
-      // 40% go opposite direction (oncoming traffic - very fast relative to player)
-      // 60% go same direction but MUCH slower (we overtake them quickly)
-      const goingOpposite = Math.random() < 0.4;
+      // Alternate between left and right lanes for zig-zag challenge
+      lastSide = -lastSide;
+
+      // 40% go opposite direction (oncoming traffic)
+      // 60% go same direction but slower
+      const goingOpposite = i % 3 === 0; // Every 3rd car is oncoming (more predictable)
 
       let carSpeed;
       let laneX;
 
       if (goingOpposite) {
-        // Oncoming traffic - they move toward us, so relative speed is very high
-        // Use negative speed (moving backward on track = coming at player)
-        carSpeed = -this.maxSpeed * 0.3;  // Coming toward us
-        laneX = -0.4 - Math.random() * 0.4;  // Left side of road (oncoming lane) -0.4 to -0.8
+        // Oncoming traffic - alternating sides
+        carSpeed = -this.maxSpeed * 0.3;
+        laneX = lastSide * (0.4 + Math.random() * 0.3); // Alternate left/right
       } else {
-        // Same direction traffic - move VERY slow so we pass them quickly
-        carSpeed = this.maxSpeed * 0.1;  // Only 10% of our speed - we zoom past them
-        laneX = 0.2 + Math.random() * 0.5;  // Right side of road 0.2 to 0.7
+        // Same direction traffic - alternating sides
+        carSpeed = this.maxSpeed * 0.1;
+        laneX = lastSide * (0.3 + Math.random() * 0.4); // Alternate left/right
       }
 
-      // Place cars only in first 85% of track (clear finish zone)
+      // Spread cars evenly across the track for consistent challenge
       const maxZ = finishZoneStart - 100 * this.segmentLength;
-      const carZ = (50 + Math.random() * (maxZ / this.segmentLength - 50)) * this.segmentLength;
+      const zSpacing = maxZ / 12;
+      const carZ = (50 + i * (zSpacing / this.segmentLength) + Math.random() * (zSpacing / this.segmentLength * 0.5)) * this.segmentLength;
 
       this.cars.push({
         z: carZ,
@@ -353,6 +359,62 @@ class RacingScene extends Phaser.Scene {
         opposite: goingOpposite,
       });
     }
+
+    // Place static obstacles (holes and barricades)
+    this.placeObstacles();
+  }
+
+  placeObstacles() {
+    this.obstacles = [];
+
+    // Calculate finish zone - no obstacles in last 15%
+    const finishZoneStart = this.trackLength * 0.85;
+
+    // Number of obstacles based on segment (harder = more obstacles)
+    const numHoles = 4 + this.segmentIndex * 2;      // 4, 6, 8 holes per segment
+    const numBarricades = 3 + this.segmentIndex * 2; // 3, 5, 7 barricades per segment
+
+    // Track last side to alternate and ensure zig-zag pattern
+    let lastSide = Math.random() < 0.5 ? 1 : -1;
+
+    // Place holes (dark spots on road) - alternating sides
+    for (let i = 0; i < numHoles; i++) {
+      // Spread holes evenly across the track
+      const zRange = (finishZoneStart / this.segmentLength - 100);
+      const z = (80 + (i / numHoles) * zRange + Math.random() * (zRange / numHoles)) * this.segmentLength;
+
+      // Alternate sides with some randomness
+      lastSide = -lastSide; // Flip side
+      const sideOffset = lastSide * (0.3 + Math.random() * 0.5); // 0.3 to 0.8 on each side
+
+      this.obstacles.push({
+        type: 'hole',
+        z: z,
+        x: sideOffset,
+        width: 0.3,  // Collision width
+      });
+    }
+
+    // Place barricades (striped barriers) - alternating sides
+    for (let i = 0; i < numBarricades; i++) {
+      // Spread barricades evenly across the track
+      const zRange = (finishZoneStart / this.segmentLength - 120);
+      const z = (100 + (i / numBarricades) * zRange + Math.random() * (zRange / numBarricades)) * this.segmentLength;
+
+      // Alternate sides with some randomness
+      lastSide = -lastSide; // Flip side
+      const sideOffset = lastSide * (0.25 + Math.random() * 0.45); // 0.25 to 0.7 on each side
+
+      this.obstacles.push({
+        type: 'barricade',
+        z: z,
+        x: sideOffset,
+        width: 0.35,  // Collision width
+      });
+    }
+
+    // Sort by z position for proper rendering
+    this.obstacles.sort((a, b) => a.z - b.z);
   }
 
   update(time, delta) {
@@ -541,6 +603,34 @@ class RacingScene extends Phaser.Scene {
         if (car.z >= this.trackLength) car.z -= this.trackLength;
       }
     }
+
+    // Check obstacle collisions (holes and barricades)
+    if (this.obstacles) {
+      for (const obstacle of this.obstacles) {
+        let dz = obstacle.z - this.playerZ;
+
+        // Handle track wrap
+        if (dz < -this.trackLength / 2) dz += this.trackLength;
+        if (dz > this.trackLength / 2) dz -= this.trackLength;
+
+        // Collision detection
+        const zCollision = dz > -50 && dz < 150;
+        const xCollision = Math.abs(obstacle.x - this.playerX) < obstacle.width;
+
+        if (zCollision && xCollision && !this.isHit) {
+          this.isHit = true;
+          this.hitTimer = this.collisionSlowdownDuration;
+          this.obstaclesHit++;
+          this.speed *= this.collisionSpeedReduction;
+          this.cameras.main.shake(400, 0.03);
+          this.onObstacleHit();
+
+          // Move obstacle behind player to prevent repeated hits
+          obstacle.z = this.playerZ - 500;
+          if (obstacle.z < 0) obstacle.z += this.trackLength;
+        }
+      }
+    }
   }
 
   render() {
@@ -631,6 +721,9 @@ class RacingScene extends Phaser.Scene {
       };
       this.drawRoadLine(closest, bottomLine, closest.isFinishLine);
     }
+
+    // Draw obstacles (holes, barricades) - behind traffic
+    this.drawObstacles(lines);
 
     // Draw traffic cars
     this.drawTraffic(lines);
@@ -837,6 +930,97 @@ class RacingScene extends Phaser.Scene {
     }
   }
 
+  drawObstacles(lines) {
+    if (!this.obstacles) return;
+
+    for (const obstacle of this.obstacles) {
+      let dz = obstacle.z - this.playerZ;
+      if (dz < 0) dz += this.trackLength;
+
+      // Only draw if in view
+      if (dz <= 0 || dz > this.drawDistance * this.segmentLength) continue;
+
+      // Find matching road line for perspective
+      const obstacleSegDist = dz / this.segmentLength;
+      let line = null;
+      for (const l of lines) {
+        const lDist = l.camDist / this.segmentLength;
+        if (Math.abs(lDist - obstacleSegDist) < 1) {
+          line = l;
+          break;
+        }
+      }
+
+      if (!line) continue;
+
+      // Position on road
+      const screenX = line.x + obstacle.x * line.w * 0.8;
+      const screenY = line.y;
+      const scale = line.scale;
+
+      if (obstacle.type === 'hole') {
+        this.drawHole(screenX, screenY, scale);
+      } else if (obstacle.type === 'barricade') {
+        this.drawBarricade(screenX, screenY, scale);
+      }
+    }
+  }
+
+  drawHole(x, y, scale) {
+    // Dark elliptical hole in the road
+    const holeW = Math.max(8, scale * 400);
+    const holeH = Math.max(4, scale * 150);
+
+    if (holeW < 5) return;
+
+    // Outer dark ring (shadow)
+    this.roadGraphics.fillStyle(0x222222, 0.8);
+    this.roadGraphics.fillEllipse(x, y, holeW * 1.15, holeH * 1.15);
+
+    // Main hole (very dark)
+    this.roadGraphics.fillStyle(0x111111, 1);
+    this.roadGraphics.fillEllipse(x, y, holeW, holeH);
+
+    // Inner depth effect (even darker)
+    this.roadGraphics.fillStyle(0x050505, 1);
+    this.roadGraphics.fillEllipse(x, y - holeH * 0.1, holeW * 0.7, holeH * 0.6);
+  }
+
+  drawBarricade(x, y, scale) {
+    // Striped construction barricade
+    const barW = Math.max(12, scale * 500);
+    const barH = Math.max(8, scale * 250);
+
+    if (barW < 6) return;
+
+    // Main barricade body (orange/red stripes)
+    const stripeCount = 4;
+    const stripeW = barW / stripeCount;
+
+    for (let i = 0; i < stripeCount; i++) {
+      // Alternate red and white stripes
+      this.spriteGraphics.fillStyle(i % 2 === 0 ? 0xFF4444 : 0xFFFFFF, 1);
+      this.spriteGraphics.fillRect(
+        x - barW / 2 + i * stripeW,
+        y - barH,
+        stripeW,
+        barH
+      );
+    }
+
+    // Top edge (darker)
+    this.spriteGraphics.fillStyle(0x333333, 1);
+    this.spriteGraphics.fillRect(x - barW / 2, y - barH - 2, barW, 3);
+
+    // Support legs
+    if (barW > 15) {
+      this.spriteGraphics.fillStyle(0x666666, 1);
+      const legW = Math.max(3, barW * 0.08);
+      this.spriteGraphics.fillRect(x - barW / 3, y - 3, legW, 4);
+      this.spriteGraphics.fillRect(x + barW / 3 - legW, y - 3, legW, 4);
+    }
+  }
+
   drawPlayerCar() {
     // Car moves left/right based on playerX, road stays stable
     // playerX ranges from -3.0 to 3.0, map to screen position
@@ -903,11 +1087,25 @@ class RacingScene extends Phaser.Scene {
     this.spriteGraphics.fillRoundedRect(playerScreenX - carW / 2 + 5, playerScreenY - carH + 5, 12, 8, 2);
     this.spriteGraphics.fillRoundedRect(playerScreenX + carW / 2 - 17, playerScreenY - carH + 5, 12, 8, 2);
 
-    // License plate area (center)
+    // License plate area (center) - larger for clear "Rush2C9" text
     this.spriteGraphics.fillStyle(0xFFFFFF, 1);
-    this.spriteGraphics.fillRect(playerScreenX - 15, playerScreenY - carH + 8, 30, 10);
-    this.spriteGraphics.fillStyle(0x333333, 1);
-    this.spriteGraphics.fillRect(playerScreenX - 13, playerScreenY - carH + 10, 26, 6);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - 38, playerScreenY - carH + 8, 76, 20, 3);
+    this.spriteGraphics.fillStyle(0x1a5276, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - 35, playerScreenY - carH + 10, 70, 16, 2);
+
+    // "Rush2C9" text on license plate
+    if (!this.licensePlateText) {
+      this.licensePlateText = this.add.text(0, 0, 'Rush2C9', {
+        fontSize: '14px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 1,
+      });
+      this.licensePlateText.setOrigin(0.5);
+      this.licensePlateText.setDepth(100);
+    }
+    this.licensePlateText.setPosition(playerScreenX, playerScreenY - carH + 18);
 
     // Rear wheels (visible from behind - bottom corners)
     this.spriteGraphics.fillStyle(0x111111, 1);
