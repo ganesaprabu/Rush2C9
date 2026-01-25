@@ -86,6 +86,16 @@ class RacingScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
+    // Tap-to-boost: Listen for taps in the middle area of screen (above controls, below HUD)
+    this.input.on('pointerdown', (pointer) => {
+      // Only activate boost if tap is in the middle zone (not on steering buttons)
+      // Middle zone: y between 20% and 75% of screen height
+      const tapY = pointer.y / this.height;
+      if (tapY > 0.15 && tapY < 0.75) {
+        this.activateBoost();
+      }
+    });
+
     // ========== CONFIGURABLE SPEED SYSTEM ==========
     // Get segment-specific configuration
     const segIdx = Math.min(this.segmentIndex, SEGMENT_CONFIG.distances.length - 1);
@@ -124,7 +134,7 @@ class RacingScene extends Phaser.Scene {
 
     // Throttle stats updates (don't update every frame)
     this.lastStatsUpdate = 0;
-    this.statsUpdateInterval = 200; // Update every 200ms
+    this.statsUpdateInterval = 500; // Update every 500ms (reduced to improve mobile touch responsiveness)
 
     // Track last km for speed increase
     this.lastKmMilestone = 0;
@@ -427,8 +437,9 @@ class RacingScene extends Phaser.Scene {
     // (removed wrap logic to allow segment completion)
 
     // Steering - playerX ranges from -3.0 to 3.0 (3x range for much more movement)
-    const speedPct = this.speed / this.maxSpeed;
-    this.playerX += this.steerDirection * 8.0 * dt * speedPct;
+    // Minimum speed factor ensures steering works even at low speeds (mobile fix)
+    const speedPct = Math.max(0.5, this.speed / this.maxSpeed);
+    this.playerX += this.steerDirection * 10.0 * dt * speedPct; // Increased from 8.0 to 10.0
 
     // Clamp to road bounds - allow car to move much further left/right
     this.playerX = Phaser.Math.Clamp(this.playerX, -3.0, 3.0);
@@ -929,6 +940,66 @@ class RacingScene extends Phaser.Scene {
         playerScreenX + 16, playerScreenY + 20 + Math.random() * 10
       );
     }
+
+    // Draw boost indicator above car when boost is ready
+    this.drawBoostIndicator(playerScreenX, playerScreenY - carH - 40);
+  }
+
+  drawBoostIndicator(x, y) {
+    if (!this.boostAvailable || this.boosting || this.countdownActive) return;
+
+    // Pulsing animation
+    const pulse = 1 + Math.sin(this.elapsedTime * 6) * 0.15;
+    const baseSize = 28 * pulse;
+
+    // Outer glow (orange)
+    this.spriteGraphics.fillStyle(0xFF6600, 0.4);
+    this.spriteGraphics.fillCircle(x, y, baseSize + 8);
+
+    // Main circle (orange gradient effect)
+    this.spriteGraphics.fillStyle(0xFF8800, 1);
+    this.spriteGraphics.fillCircle(x, y, baseSize);
+
+    // Inner highlight
+    this.spriteGraphics.fillStyle(0xFFAA00, 1);
+    this.spriteGraphics.fillCircle(x, y - baseSize * 0.2, baseSize * 0.6);
+
+    // Rocket icon (simplified)
+    this.spriteGraphics.fillStyle(0xFFFFFF, 1);
+    // Rocket body
+    this.spriteGraphics.fillTriangle(
+      x, y - baseSize * 0.5,
+      x - baseSize * 0.25, y + baseSize * 0.3,
+      x + baseSize * 0.25, y + baseSize * 0.3
+    );
+    // Rocket fins
+    this.spriteGraphics.fillTriangle(
+      x - baseSize * 0.25, y + baseSize * 0.1,
+      x - baseSize * 0.45, y + baseSize * 0.4,
+      x - baseSize * 0.15, y + baseSize * 0.3
+    );
+    this.spriteGraphics.fillTriangle(
+      x + baseSize * 0.25, y + baseSize * 0.1,
+      x + baseSize * 0.45, y + baseSize * 0.4,
+      x + baseSize * 0.15, y + baseSize * 0.3
+    );
+
+    // "TAP" text indicator using Phaser text (create once, update position)
+    if (!this.boostTapText) {
+      this.boostTapText = this.add.text(0, 0, 'TAP!', {
+        fontSize: '16px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 3,
+      });
+      this.boostTapText.setOrigin(0.5);
+      this.boostTapText.setDepth(150);
+    }
+
+    this.boostTapText.setPosition(x, y + baseSize + 18);
+    this.boostTapText.setVisible(true);
+    this.boostTapText.setScale(pulse);
   }
 
   // External controls
@@ -1097,6 +1168,7 @@ class RacingScene extends Phaser.Scene {
   hideNotificationTexts() {
     // Hide text objects when not in use
     if (this.cloudText) this.cloudText.setVisible(false);
+    if (this.boostTapText) this.boostTapText.setVisible(false);
   }
 }
 

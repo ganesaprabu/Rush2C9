@@ -1,12 +1,13 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect, memo } from 'react';
 
 /**
  * ControlButtons - Touch/Mouse controls for racing game
+ * Memoized to prevent re-renders that affect touch responsiveness
  *
  * Uses native event listeners for immediate touch response
  * Boost is now system-driven (cooldown-based, not credit-based)
  */
-function ControlButtons({
+const ControlButtons = memo(function ControlButtons({
   onSteer,
   onBoost,
   boostReady = false,  // System-driven: is boost available?
@@ -33,18 +34,23 @@ function ControlButtons({
     isBoostingRef.current = isBoosting;
   }, [onSteer, onBoost, boostReady, isBoosting]);
 
-  // Start steering function
+  // Start steering function - optimized for mobile responsiveness
   const startSteer = useCallback((direction, button) => {
+    // Always clear any existing interval first
     if (steerIntervalRef.current) {
       clearInterval(steerIntervalRef.current);
+      steerIntervalRef.current = null;
     }
+
     setActiveButton(button);
+
+    // Send initial steer command immediately
     onSteerRef.current?.(direction);
 
-    // Continuous steering while held
+    // Continuous steering while held - faster rate for smoother response
     steerIntervalRef.current = setInterval(() => {
       onSteerRef.current?.(direction);
-    }, 50);
+    }, 16); // ~60fps for smoother steering
   }, []);
 
   // Stop steering function
@@ -158,17 +164,17 @@ function ControlButtons({
 
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 p-3"
+      className="absolute bottom-0 left-0 right-0 p-2"
       style={{
-        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+        paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
         ...containerStyle
       }}
     >
-      <div className="flex justify-between items-center gap-3">
-        {/* Left button */}
+      <div className="flex justify-between items-center gap-4">
+        {/* Left button - LARGER touch target */}
         <div
           ref={leftBtnRef}
-          className={`w-16 h-16 rounded-xl flex items-center justify-center text-3xl text-white shadow-lg cursor-pointer ${
+          className={`flex-1 h-24 rounded-xl flex items-center justify-center text-5xl text-white shadow-lg cursor-pointer ${
             activeButton === 'left' ? 'bg-cyan-600' : 'bg-gray-800/90'
           }`}
           style={containerStyle}
@@ -176,25 +182,13 @@ function ControlButtons({
           ◀
         </div>
 
-        {/* Boost button - system-driven availability */}
-        <div
-          ref={boostBtnRef}
-          className={`flex-1 px-4 py-3 rounded-xl font-bold text-sm shadow-lg text-center cursor-pointer transition-all ${
-            isBoosting
-              ? 'bg-yellow-500 text-black animate-pulse'
-              : boostReady
-                ? 'bg-orange-600 text-white animate-pulse'
-                : 'bg-gray-700/50 text-gray-500'
-          }`}
-          style={containerStyle}
-        >
-          {isBoosting ? '🚀 BOOSTING!' : boostReady ? '🚀 BOOST READY!' : '🚀 BOOST'}
-        </div>
+        {/* Boost button - hidden, ref kept for code compatibility */}
+        <div ref={boostBtnRef} style={{ display: 'none' }} />
 
-        {/* Right button */}
+        {/* Right button - LARGER touch target */}
         <div
           ref={rightBtnRef}
-          className={`w-16 h-16 rounded-xl flex items-center justify-center text-3xl text-white shadow-lg cursor-pointer ${
+          className={`flex-1 h-24 rounded-xl flex items-center justify-center text-5xl text-white shadow-lg cursor-pointer ${
             activeButton === 'right' ? 'bg-cyan-600' : 'bg-gray-800/90'
           }`}
           style={containerStyle}
@@ -204,6 +198,6 @@ function ControlButtons({
       </div>
     </div>
   );
-}
+});
 
 export default ControlButtons;

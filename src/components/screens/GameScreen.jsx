@@ -31,6 +31,7 @@ function GameScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const destination = searchParams.get('destination') || 'lcs';
+  const hideHUD = searchParams.get('hud') === '0'; // Add ?hud=0 to URL to hide HUD for testing
 
   // Initialize game data once
   const initialCity = useMemo(() => getRandomStartingCity(), []);
@@ -293,20 +294,22 @@ function GameScreen() {
           />
         </div>
 
-        {/* HUD Overlay - on top of game */}
-        <div className="absolute top-0 left-0 right-0 max-w-md mx-auto pointer-events-none z-10">
-          <GameHUD
-            credits={credits}
-            progress={progress}
-            time={elapsedTime}
-            speed={speed}
-            distance={distance}
-            totalDistance={totalDistance}
-            segmentNumber={currentSegment + 1}
-            totalSegments={segments.length}
-            isBoosting={isBoosting}
-          />
-        </div>
+        {/* HUD Overlay - on top of game (can be hidden with ?hud=0 for testing) */}
+        {!hideHUD && (
+          <div className="absolute top-0 left-0 right-0 max-w-md mx-auto pointer-events-none z-10">
+            <GameHUD
+              credits={credits}
+              progress={progress}
+              time={elapsedTime}
+              speed={speed}
+              distance={distance}
+              totalDistance={totalDistance}
+              segmentNumber={currentSegment + 1}
+              totalSegments={segments.length}
+              isBoosting={isBoosting}
+            />
+          </div>
+        )}
 
         {/* Control Buttons - positioned at bottom */}
         <div className="absolute bottom-0 left-0 right-0 max-w-md mx-auto z-20">

@@ -1,9 +1,12 @@
+import { memo } from 'react';
+
 /**
  * GameHUD - Compact single-row heads-up display
+ * Memoized to prevent unnecessary re-renders that affect touch responsiveness
  *
  * Displays: Segment | Credits | Time | Speed | Distance | Progress
  */
-function GameHUD({
+const GameHUD = memo(function GameHUD({
   credits = 200,
   progress = 0,
   time = 0,
@@ -93,6 +96,6 @@ function GameHUD({
       )}
     </div>
   );
-}
+});
 
 export default GameHUD;
