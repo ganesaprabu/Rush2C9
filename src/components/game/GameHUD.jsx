@@ -28,8 +28,8 @@ const GameHUD = memo(function GameHUD({
 
   return (
     <div className="p-2 pointer-events-none">
-      {/* Single compact row - 2x height */}
-      <div className="bg-black/70 backdrop-blur-sm rounded-lg px-3 py-3 flex items-center justify-between gap-2 text-sm">
+      {/* Row 1: Stats */}
+      <div className="bg-black/70 backdrop-blur-sm rounded-t-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
         {/* Segment */}
         <div className="flex items-center gap-1">
           <span className="text-gray-400">Seg</span>
@@ -71,12 +71,11 @@ const GameHUD = memo(function GameHUD({
           <span>📍</span>
           <span className="font-bold text-white">{distanceDisplay}km</span>
         </div>
+      </div>
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-gray-600" />
-
-        {/* Progress bar only */}
-        <div className="flex-1 h-3 bg-gray-700 rounded-full overflow-hidden min-w-12">
+      {/* Row 2: Progress bar (full width) */}
+      <div className="bg-black/70 backdrop-blur-sm rounded-b-lg px-3 py-2">
+        <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-300 ${
               isBoosting ? 'bg-yellow-400' : 'bg-gradient-to-r from-blue-500 to-cyan-400'
