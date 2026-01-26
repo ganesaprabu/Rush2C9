@@ -352,10 +352,11 @@ export const GAME_CONFIG = {
   startingCredits: 200,
   boostCost: 0,            // Boost is now FREE (system-driven cooldown)
 
-  // Scoring
+  // Scoring (based on distance/time)
   basePoints: 500,
   maxTimeBonus: 300,
   creditsToPointsRatio: 1, // 1 credit saved = 1 point
+  hitPenalty: 50,          // Points deducted per obstacle hit
 
   // Game structure
   segments: 3,

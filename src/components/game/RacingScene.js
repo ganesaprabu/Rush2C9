@@ -86,6 +86,10 @@ class RacingScene extends Phaser.Scene {
     this.boosting = false;
     this.boostTimer = 0;
 
+    // Boost usage tracking (for stats display, not scoring)
+    this.boostsUsed = 0;        // How many times boost was activated
+    this.boostsAvailable = 0;   // How many boost opportunities appeared
+
     // Victory sequence state
     this.victoryMode = false;
     this.victoryTimer = 0;
@@ -515,7 +519,8 @@ class RacingScene extends Phaser.Scene {
       this.victoryMode = true;
       this.victoryTimer = 0;
       this.onProgress(100); // Ensure progress is reported as 100% to stop timer
-      this.onComplete(this.elapsedTime, this.obstaclesHit);
+      // Pass stats: time, hits, boostsUsed, boostsAvailable
+      this.onComplete(this.elapsedTime, this.obstaclesHit, this.boostsUsed, this.boostsAvailable);
       // Continue to render and move for victory sequence
     }
 
@@ -550,6 +555,7 @@ class RacingScene extends Phaser.Scene {
       this.boostCooldown -= dt;
       if (this.boostCooldown <= 0) {
         this.boostAvailable = true;
+        this.boostsAvailable++;  // Track how many boost opportunities appeared
         this.onBoostReady(true); // Notify UI that boost is ready
       }
     }
@@ -2035,6 +2041,7 @@ class RacingScene extends Phaser.Scene {
 
     this.boosting = true;
     this.boostAvailable = false;
+    this.boostsUsed++;  // Track how many times boost was activated
     this.boostTimer = this.boostEffectDuration;
     this.cameras.main.flash(100, 255, 255, 0);
     this.onBoostUsed();

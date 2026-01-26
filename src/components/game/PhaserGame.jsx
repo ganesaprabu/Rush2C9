@@ -16,7 +16,7 @@ import RacingScene from './RacingScene';
  * - onObstacleHit: Callback when hitting obstacle
  * - onBoostUsed: Callback when boost is used
  * - onBoostReady: Callback when boost becomes available/unavailable
- * - onSegmentComplete: Callback when segment is done (time, obstaclesHit)
+ * - onSegmentComplete: Callback when segment is done (time, obstaclesHit, boostsUsed, boostsAvailable)
  */
 const PhaserGame = forwardRef(function PhaserGame({
   vehicleId = 'car',
@@ -51,7 +51,7 @@ const PhaserGame = forwardRef(function PhaserGame({
       onObstacleHit: () => callbacksRef.current.onObstacleHit?.(),
       onBoostUsed: () => callbacksRef.current.onBoostUsed?.(),
       onBoostReady: (ready) => callbacksRef.current.onBoostReady?.(ready),
-      onComplete: (time, obstaclesHit) => callbacksRef.current.onSegmentComplete?.(time, obstaclesHit)
+      onComplete: (time, obstaclesHit, boostsUsed, boostsAvailable) => callbacksRef.current.onSegmentComplete?.(time, obstaclesHit, boostsUsed, boostsAvailable)
     });
 
     // Phaser game configuration

@@ -49,8 +49,10 @@ function GameScreen() {
   const [credits, setCredits] = useState(GAME_CONFIG.startingCredits);
   const [currentSegment, setCurrentSegment] = useState(0);
   const [currentVehicle, setCurrentVehicle] = useState('car'); // Default vehicle
-  const [segmentResults, setSegmentResults] = useState([]); // {time, obstaclesHit}
+  const [segmentResults, setSegmentResults] = useState([]); // {time, obstaclesHit, boostsUsed, boostsAvailable}
   const [totalTime, setTotalTime] = useState(0);
+  const [totalBoostsUsed, setTotalBoostsUsed] = useState(0);
+  const [totalBoostsAvailable, setTotalBoostsAvailable] = useState(0);
 
   // UI state
   const [countdown, setCountdown] = useState(3);
@@ -95,10 +97,12 @@ function GameScreen() {
 
   // Called when a racing segment completes
   const handleSegmentComplete = useCallback(
-    (time, obstaclesHit = 0) => {
+    (time, obstaclesHit = 0, boostsUsed = 0, boostsAvailable = 0) => {
       // Save segment result
-      setSegmentResults((prev) => [...prev, { time, obstaclesHit }]);
+      setSegmentResults((prev) => [...prev, { time, obstaclesHit, boostsUsed, boostsAvailable }]);
       setTotalTime((prev) => prev + time);
+      setTotalBoostsUsed((prev) => prev + boostsUsed);
+      setTotalBoostsAvailable((prev) => prev + boostsAvailable);
 
       // Show celebration overlay on the racing screen!
       setShowCelebration(true);
@@ -209,13 +213,17 @@ function GameScreen() {
   }, [boostReady]);
 
   // Calculate final score (rounded to whole number)
+  // Score = base + time bonus + credits - hits penalty
+  // Note: Boost usage is NOT included in scoring (per user request)
   const calculateScore = useCallback(() => {
+    const basePoints = GAME_CONFIG.basePoints;
     const timeBonus = Math.max(0, GAME_CONFIG.maxTimeBonus - totalTime);
     const creditBonus = credits;
-    const basePoints = GAME_CONFIG.basePoints;
+    const totalHits = segmentResults.reduce((sum, r) => sum + (r.obstaclesHit || 0), 0);
+    const hitsPenalty = totalHits * GAME_CONFIG.hitPenalty;
 
-    return Math.round(basePoints + timeBonus + creditBonus);
-  }, [credits, totalTime]);
+    return Math.round(Math.max(0, basePoints + timeBonus + creditBonus - hitsPenalty));
+  }, [credits, totalTime, segmentResults]);
 
   // Save score and return home
   const handleFinish = useCallback(() => {
@@ -427,9 +435,28 @@ function GameScreen() {
             <p className="text-gray-400">
               {completedSegment?.from} → {completedSegment?.to}
             </p>
-            <p className="text-cyan-400 mt-2">
-              Time: {segmentResults[currentSegment]?.time?.toFixed(1)}s
-            </p>
+            {/* Segment Stats */}
+            <div className="flex justify-center gap-4 mt-3 text-sm">
+              <div className="bg-gray-800/50 rounded-lg px-3 py-2">
+                <span className="text-cyan-400">{segmentResults[currentSegment]?.time?.toFixed(1)}s</span>
+                <span className="text-gray-400 ml-1">Time</span>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg px-3 py-2">
+                <span className="text-red-400">{segmentResults[currentSegment]?.obstaclesHit || 0}</span>
+                <span className="text-gray-400 ml-1">Hits</span>
+              </div>
+              <div className="bg-gray-800/50 rounded-lg px-3 py-2">
+                <span className="text-yellow-400">
+                  {segmentResults[currentSegment]?.boostsUsed || 0}/{segmentResults[currentSegment]?.boostsAvailable || 0}
+                </span>
+                <span className="text-gray-400 ml-1">Boost</span>
+              </div>
+            </div>
+            {/* Current Score */}
+            <div className="mt-4 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 rounded-lg px-4 py-2 inline-block border border-yellow-700/50">
+              <span className="text-gray-400 text-sm">Current Score: </span>
+              <span className="text-yellow-400 font-bold text-lg">⭐ {calculateScore()}</span>
+            </div>
           </div>
 
           {/* Next segment info */}
@@ -535,6 +562,7 @@ function GameScreen() {
     const score = calculateScore();
     const timeBonus = Math.round(Math.max(0, GAME_CONFIG.maxTimeBonus - totalTime));
     const totalObstaclesHit = segmentResults.reduce((sum, r) => sum + (r.obstaclesHit || 0), 0);
+    const hitsPenalty = totalObstaclesHit * GAME_CONFIG.hitPenalty;
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-6">
@@ -571,6 +599,12 @@ function GameScreen() {
               <div className="flex justify-between">
                 <span className="text-gray-400">Credits Saved</span>
                 <span className="text-yellow-400">+{credits}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Hits Penalty ({totalObstaclesHit} × {GAME_CONFIG.hitPenalty})</span>
+                <span className={hitsPenalty > 0 ? 'text-red-400' : 'text-gray-500'}>
+                  -{hitsPenalty}
+                </span>
               </div>
               <div className="border-t border-gray-700 pt-2 flex justify-between font-bold">
                 <span>Total</span>
@@ -627,7 +661,7 @@ function GameScreen() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mb-6 text-center">
+          <div className="grid grid-cols-2 gap-3 mb-4 text-center">
             <div className="bg-gray-800/50 rounded-lg p-3">
               <p className="text-lg font-bold">{totalTime.toFixed(1)}s</p>
               <p className="text-xs text-gray-400">Total Time</p>
@@ -636,9 +670,15 @@ function GameScreen() {
               <p className="text-lg font-bold">{totalObstaclesHit}</p>
               <p className="text-xs text-gray-400">Obstacles Hit</p>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-6 text-center">
             <div className="bg-gray-800/50 rounded-lg p-3">
               <p className="text-lg font-bold">{startingCity.baseDistance.toLocaleString()}</p>
-              <p className="text-xs text-gray-400">km</p>
+              <p className="text-xs text-gray-400">km Traveled</p>
+            </div>
+            <div className="bg-gray-800/50 rounded-lg p-3">
+              <p className="text-lg font-bold text-cyan-400">{totalBoostsUsed} / {totalBoostsAvailable}</p>
+              <p className="text-xs text-gray-400">Boosts Used</p>
             </div>
           </div>
 
