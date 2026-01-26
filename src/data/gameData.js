@@ -339,8 +339,8 @@ export const COLLISION_CONFIG = {
   // Speed reduction on collision (percentage, 0.5 = 50% slowdown)
   speedReduction: 0.5,
 
-  // How long the slowdown lasts (seconds) - increased for more penalty
-  slowdownDuration: 3,
+  // How long the slowdown lasts (seconds)
+  slowdownDuration: 1.5,
 };
 
 // ============================================================================

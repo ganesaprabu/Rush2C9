@@ -39,24 +39,30 @@ function HomeScreen() {
 
         {/* Main Actions */}
         <div className="space-y-4">
-          {/* Play Button */}
-          <div className="bg-gradient-to-r from-blue-900/50 to-cyan-900/50 rounded-xl p-6 border border-blue-800">
-            <h3 className="text-xl font-bold mb-4">Choose Your Destination</h3>
-            <div className="grid grid-cols-2 gap-4">
+          {/* Play - Destination Selection */}
+          <div className="bg-gradient-to-r from-blue-900/50 to-cyan-900/50 rounded-xl p-5 border border-blue-700">
+            <h3 className="text-lg font-semibold mb-4 text-center text-blue-200">🏁 Start Your Journey</h3>
+            <div className="grid grid-cols-2 gap-3">
               {DESTINATIONS.map((dest) => (
                 <button
                   key={dest.id}
                   onClick={() => navigate(`/game?destination=${dest.id}`)}
-                  className="bg-gray-800 hover:bg-gray-700 rounded-lg p-4 text-center transition-all hover:scale-105"
+                  className={`relative overflow-hidden rounded-xl p-4 text-center transition-all hover:scale-105 active:scale-95 shadow-lg ${
+                    dest.id === 'lcs'
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 border-2 border-blue-400'
+                      : 'bg-gradient-to-br from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 border-2 border-red-400'
+                  }`}
                 >
-                  <div className="text-3xl mb-2">
+                  <div className="text-4xl mb-2 drop-shadow-lg">
                     {dest.id === 'lcs' ? '🎮' : '🎯'}
                   </div>
-                  <div className="font-semibold">{dest.name}</div>
-                  <div className="text-xs text-gray-400">{dest.game}</div>
+                  <div className="font-bold text-white">{dest.name}</div>
+                  <div className="text-xs text-white/70">{dest.game}</div>
+                  <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity"></div>
                 </button>
               ))}
             </div>
+            <p className="text-center text-xs text-gray-400 mt-3">Tap a destination to race!</p>
           </div>
 
           {/* Duel Button */}

@@ -357,50 +357,51 @@ class RacingScene extends Phaser.Scene {
 
   placeCars() {
     this.cars = [];
-    const colors = [0x3388FF, 0x33CC33, 0xFFAA00, 0xCC3333, 0x9933CC];
+    const colors = [0x3388FF, 0x33CC33, 0xFFAA00, 0xCC3333, 0x9933CC, 0xFF6699, 0x00CCCC, 0xFF9933];
 
     // Calculate finish zone - last 15% of track has reduced traffic
     const finishZoneStart = this.trackLength * 0.85;
 
-    // ========== BALANCED TRAFFIC PLACEMENT ==========
-    // Strictly alternate sides, with fixed lane positions (no randomness in X)
-    const totalCars = 10;
-    let currentSide = 1;
+    // ========== RANDOMIZED TRAFFIC PLACEMENT ==========
+    // Alternate sides for fair zig-zag, but randomize positions within lanes
+    const totalCars = 10 + Math.floor(Math.random() * 4); // 10-13 cars (random count)
+    let currentSide = Math.random() > 0.5 ? 1 : -1; // Random starting side
 
     for (let i = 0; i < totalCars; i++) {
       // Strictly alternate sides for guaranteed zig-zag
       currentSide = -currentSide;
 
-      // Every 4th car is oncoming (25%)
-      const goingOpposite = i % 4 === 0;
+      // Random chance for oncoming (20-30%)
+      const goingOpposite = Math.random() < 0.25;
 
       let carSpeed;
       let laneX;
 
       if (goingOpposite) {
-        // Oncoming traffic - fixed position in lane
-        carSpeed = -this.maxSpeed * 0.25;
-        laneX = currentSide * 0.55; // Fixed position: -0.55 or +0.55
+        // Oncoming traffic - randomized speed and position within lane
+        carSpeed = -this.maxSpeed * (0.20 + Math.random() * 0.15); // 20-35% speed
+        laneX = currentSide * (0.45 + Math.random() * 0.2); // 0.45-0.65 range
       } else {
-        // Same direction traffic - fixed position in lane
-        carSpeed = this.maxSpeed * 0.08;
-        laneX = currentSide * 0.5; // Fixed position: -0.5 or +0.5
+        // Same direction traffic - randomized speed and position
+        carSpeed = this.maxSpeed * (0.05 + Math.random() * 0.08); // 5-13% speed
+        laneX = currentSide * (0.4 + Math.random() * 0.25); // 0.4-0.65 range
       }
 
-      // Spread cars EVENLY across the track - no random clustering
+      // Spread cars across track with RANDOM offset (±25% of spacing)
       const startZ = 60 * this.segmentLength;
       const endZ = finishZoneStart - 50 * this.segmentLength;
       const zRange = endZ - startZ;
       const zSpacing = zRange / totalCars;
 
-      // Fixed spacing with small offset to avoid overlapping with obstacles
-      const carZ = startZ + i * zSpacing + zSpacing * 0.3;
+      // Add randomness to Z position (base + random offset)
+      const randomOffset = (Math.random() - 0.5) * zSpacing * 0.5; // ±25% of spacing
+      const carZ = startZ + i * zSpacing + zSpacing * 0.3 + randomOffset;
 
       this.cars.push({
         z: carZ,
         x: laneX,
         speed: carSpeed,
-        color: colors[i % colors.length],
+        color: colors[Math.floor(Math.random() * colors.length)], // Random color
         opposite: goingOpposite,
       });
     }
@@ -418,41 +419,46 @@ class RacingScene extends Phaser.Scene {
     // Calculate finish zone - no obstacles in last 5% (very close to finish)
     const finishZoneStart = this.trackLength * 0.95;
 
-    // Total obstacles that block lanes (forcing zig-zag)
-    // More obstacles = more zig-zag required
-    const totalObstacles = 10 + this.segmentIndex * 2; // 10, 12, 14 per segment
+    // ========== RANDOMIZED OBSTACLE PLACEMENT ==========
+    // Random count that increases with segment difficulty
+    const baseObstacles = 10 + this.segmentIndex * 2; // 10, 12, 14 base
+    const totalObstacles = baseObstacles + Math.floor(Math.random() * 3); // +0-2 random
 
-    // ========== BALANCED OBSTACLE PLACEMENT ==========
-    // Start with OPPOSITE side from first traffic car (which starts at side = -1)
-    // This ensures obstacles and cars don't cluster on same side
-    let currentSide = 1; // Start opposite to traffic
+    // Random starting side
+    let currentSide = Math.random() > 0.5 ? 1 : -1;
 
-    // Spread obstacles from 10% to 95% of track (covers almost entire race)
-    const startZ = this.trackLength * 0.10;  // Start at 10% (~0.5km)
-    const endZ = finishZoneStart;             // End at 95% (~4.75km)
+    // Spread obstacles from 10% to 95% of track
+    const startZ = this.trackLength * 0.10;
+    const endZ = finishZoneStart;
     const zRange = endZ - startZ;
     const spacing = zRange / totalObstacles;
 
+    // Obstacle types pool (only types that have rendering functions!)
+    const obstacleTypes = ['hole', 'barricade'];
+
     for (let i = 0; i < totalObstacles; i++) {
-      // Strictly alternate sides for guaranteed zig-zag
+      // Strictly alternate sides for fair zig-zag gameplay
       currentSide = -currentSide;
 
-      // Fixed spacing - NO randomness to prevent clustering
-      const z = startZ + i * spacing + spacing * 0.5;
+      // Add randomness to Z position (±20% of spacing)
+      const randomZOffset = (Math.random() - 0.5) * spacing * 0.4;
+      const z = startZ + i * spacing + spacing * 0.5 + randomZOffset;
 
-      // Position to block one lane (left or right half of road)
-      // x = -0.5 blocks left lane, x = 0.5 blocks right lane
-      const lanePosition = currentSide * 0.5;
+      // Randomize X position within the lane (0.4-0.6 range)
+      const lanePosition = currentSide * (0.4 + Math.random() * 0.2);
 
-      // Alternate between holes and barricades
-      const type = i % 2 === 0 ? 'hole' : 'barricade';
+      // Random obstacle type
+      const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+
+      // Slightly randomized width (0.45-0.6) - original working values
+      const width = 0.45 + Math.random() * 0.15;
 
       this.obstacles.push({
         type: type,
         z: z,
         x: lanePosition,
-        side: currentSide, // -1 = left lane blocked, 1 = right lane blocked
-        width: 0.55,  // Slightly narrower to give small margin for passing
+        side: currentSide,
+        width: width,
       });
     }
 
@@ -615,14 +621,13 @@ class RacingScene extends Phaser.Scene {
     // Clamp to road bounds - allow car to move much further left/right
     this.playerX = Phaser.Math.Clamp(this.playerX, -3.0, 3.0);
 
-    // Update traffic - cars move relative to player
+    // Update traffic - cars move but DON'T wrap (finite track)
     for (const car of this.cars) {
       // Car's absolute position change
       car.z += car.speed * dt;
 
-      // Wrap around track
-      if (car.z >= this.trackLength) car.z -= this.trackLength;
-      if (car.z < 0) car.z += this.trackLength;
+      // NO wrap-around - cars that go off track just stay off
+      // This prevents phantom collisions from wrapped cars
     }
 
     // Collisions
@@ -686,6 +691,9 @@ class RacingScene extends Phaser.Scene {
   }
 
   checkCollisions() {
+    // Skip collision checks during victory mode
+    if (this.victoryMode || this.completed) return;
+
     // ========== COORDINATE SYSTEM FIX ==========
     // playerX ranges from -3.0 to 3.0 (screen movement)
     // car.x and obstacle.x range from -1.0 to 1.0 (lane position)
@@ -693,13 +701,16 @@ class RacingScene extends Phaser.Scene {
     // playerX / 3.0 gives us a value from -1.0 to 1.0
     const normalizedPlayerX = this.playerX / 3.0;
 
+    // Get current progress percentage for boundary checks
+    const progressPercent = (this.playerZ / this.trackLength) * 100;
+
     for (const car of this.cars) {
       // Calculate distance in front of player (positive = ahead of us)
-      let dz = car.z - this.playerZ;
+      // NO wrap-around - track is finite with a finish line
+      const dz = car.z - this.playerZ;
 
-      // Handle track wrap-around
-      if (dz < -this.trackLength / 2) dz += this.trackLength;
-      if (dz > this.trackLength / 2) dz -= this.trackLength;
+      // Skip cars that are far behind or far ahead (outside reasonable range)
+      if (dz < -500 || dz > this.trackLength * 0.5) continue;
 
       // Z collision: car must be within 200 units ahead or 80 behind
       // X collision: compare normalized positions with tolerance for car width
@@ -716,18 +727,17 @@ class RacingScene extends Phaser.Scene {
 
         // Push the traffic car away to prevent repeated collisions
         car.z += 300;
-        if (car.z >= this.trackLength) car.z -= this.trackLength;
       }
     }
 
     // Check obstacle collisions (holes and barricades)
     if (this.obstacles) {
       for (const obstacle of this.obstacles) {
-        let dz = obstacle.z - this.playerZ;
+        // NO wrap-around - track is finite with a finish line
+        const dz = obstacle.z - this.playerZ;
 
-        // Handle track wrap
-        if (dz < -this.trackLength / 2) dz += this.trackLength;
-        if (dz > this.trackLength / 2) dz -= this.trackLength;
+        // Skip obstacles that are far behind or far ahead
+        if (dz < -500 || dz > this.trackLength * 0.5) continue;
 
         // Z collision detection
         const zCollision = dz > -50 && dz < 150;
@@ -747,7 +757,6 @@ class RacingScene extends Phaser.Scene {
 
           // Move obstacle behind player to prevent repeated hits
           obstacle.z = this.playerZ - 500;
-          if (obstacle.z < 0) obstacle.z += this.trackLength;
         }
       }
     }
@@ -1896,35 +1905,82 @@ class RacingScene extends Phaser.Scene {
 
   drawVictoryTrophy(x, y) {
     const g = this.spriteGraphics;
+    const scale = 1.3; // Make trophy bigger
 
-    // Trophy glow
-    const pulse = 1 + Math.sin(this.victoryTimer * 4) * 0.1;
+    // Trophy glow effect (pulsing)
+    const pulse = 1 + Math.sin(this.victoryTimer * 4) * 0.15;
+    g.fillStyle(0xFFD700, 0.2);
+    g.fillCircle(x, y, 55 * pulse * scale);
+    g.fillStyle(0xFFD700, 0.1);
+    g.fillCircle(x, y, 70 * pulse * scale);
 
-    g.fillStyle(0xFFD700, 0.3);
-    g.fillCircle(x, y, 40 * pulse);
+    // ========== TROPHY CUP ==========
 
-    // Trophy cup
+    // Cup body (trapezoid shape - wider at top)
     g.fillStyle(0xFFD700, 1);
-    // Main cup body
-    g.fillRoundedRect(x - 20, y - 15, 40, 35, 5);
+    g.beginPath();
+    g.moveTo(x - 28 * scale, y - 25 * scale);  // Top left
+    g.lineTo(x + 28 * scale, y - 25 * scale);  // Top right
+    g.lineTo(x + 18 * scale, y + 15 * scale);  // Bottom right
+    g.lineTo(x - 18 * scale, y + 15 * scale);  // Bottom left
+    g.closePath();
+    g.fillPath();
 
-    // Cup rim (wider top)
-    g.fillStyle(0xFFE44D, 1);
-    g.fillRoundedRect(x - 25, y - 20, 50, 12, 4);
+    // Cup rim (shiny top edge)
+    g.fillStyle(0xFFE866, 1);
+    g.fillRoundedRect(x - 32 * scale, y - 32 * scale, 64 * scale, 10 * scale, 4);
 
-    // Cup handles
+    // Inner cup shadow (gives depth)
+    g.fillStyle(0xCC9900, 0.5);
+    g.fillEllipse(x, y - 18 * scale, 22 * scale, 8 * scale);
+
+    // ========== HANDLES ==========
+    // Left handle (curved)
     g.fillStyle(0xFFD700, 1);
-    g.fillRoundedRect(x - 32, y - 10, 10, 20, 5);
-    g.fillRoundedRect(x + 22, y - 10, 10, 20, 5);
+    g.beginPath();
+    g.moveTo(x - 28 * scale, y - 18 * scale);
+    g.lineTo(x - 40 * scale, y - 15 * scale);
+    g.lineTo(x - 42 * scale, y + 5 * scale);
+    g.lineTo(x - 35 * scale, y + 10 * scale);
+    g.lineTo(x - 28 * scale, y + 5 * scale);
+    g.closePath();
+    g.fillPath();
 
-    // Base
-    g.fillStyle(0x8B7355, 1);
-    g.fillRoundedRect(x - 15, y + 18, 30, 10, 3);
-    g.fillRoundedRect(x - 20, y + 26, 40, 8, 2);
+    // Right handle (curved)
+    g.beginPath();
+    g.moveTo(x + 28 * scale, y - 18 * scale);
+    g.lineTo(x + 40 * scale, y - 15 * scale);
+    g.lineTo(x + 42 * scale, y + 5 * scale);
+    g.lineTo(x + 35 * scale, y + 10 * scale);
+    g.lineTo(x + 28 * scale, y + 5 * scale);
+    g.closePath();
+    g.fillPath();
 
-    // Star on trophy
+    // ========== STEM & BASE ==========
+    // Stem
+    g.fillStyle(0xDAA520, 1);
+    g.fillRoundedRect(x - 8 * scale, y + 15 * scale, 16 * scale, 18 * scale, 3);
+
+    // Base platform (two tiers)
+    g.fillStyle(0x8B6914, 1);
+    g.fillRoundedRect(x - 18 * scale, y + 32 * scale, 36 * scale, 8 * scale, 3);
+    g.fillStyle(0x704214, 1);
+    g.fillRoundedRect(x - 24 * scale, y + 39 * scale, 48 * scale, 10 * scale, 4);
+
+    // ========== DECORATIONS ==========
+    // "#1" text on trophy
     g.fillStyle(0xFFFFFF, 1);
-    this.drawStar(x, y, 8, 5, 4);
+    g.fillRoundedRect(x - 10 * scale, y - 12 * scale, 20 * scale, 18 * scale, 3);
+    g.fillStyle(0xFFD700, 1);
+    g.fillRoundedRect(x - 7 * scale, y - 9 * scale, 14 * scale, 12 * scale, 2);
+
+    // Star on top
+    g.fillStyle(0xFFFFFF, 1);
+    this.drawStar(x, y - 38 * scale, 10 * scale, 5 * scale, 5);
+
+    // Shine effect (top left)
+    g.fillStyle(0xFFFFFF, 0.6);
+    g.fillEllipse(x - 15 * scale, y - 15 * scale, 6 * scale, 10 * scale);
   }
 
   drawStar(cx, cy, outerR, innerR, points) {
