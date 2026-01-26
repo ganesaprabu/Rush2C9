@@ -97,16 +97,41 @@ cd Rush2C9
 
 # Install dependencies
 npm install
+```
 
-# Start development server
+### Development Server
+
+```bash
+# Start the development server
 npm run dev
 ```
+
+This will start the Vite development server. Open your browser and navigate to:
+- **Local:** http://localhost:5173
+- **Network:** http://YOUR_IP:5173 (for testing on mobile devices)
+
+The server supports hot module replacement (HMR) - changes to your code will be reflected immediately without a full page reload.
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with HMR |
+| `npm run build` | Build for production (output in `dist/`) |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint to check code quality |
 
 ### Build for Production
 
 ```bash
+# Create optimized production build
 npm run build
+
+# Preview the production build
+npm run preview
 ```
+
+The production build will be output to the `dist/` folder, ready for deployment.
 
 ---
 

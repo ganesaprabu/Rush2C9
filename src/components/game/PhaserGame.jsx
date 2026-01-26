@@ -23,6 +23,7 @@ const PhaserGame = forwardRef(function PhaserGame({
   roadType = 'highway',
   credits = 200,
   segmentIndex = 0,
+  playerName = 'RACER',
   onProgress,
   onStats,
   onObstacleHit,
@@ -78,8 +79,20 @@ const PhaserGame = forwardRef(function PhaserGame({
     // Create game instance
     gameRef.current = new Phaser.Game(config);
 
+    // Wait for scene to be ready, then set initial values
+    const checkSceneReady = setInterval(() => {
+      if (gameRef.current && gameRef.current.scene.scenes[0]) {
+        const scene = gameRef.current.scene.scenes[0];
+        if (scene.setPlayerName) {
+          scene.setPlayerName(playerName);
+          clearInterval(checkSceneReady);
+        }
+      }
+    }, 100);
+
     // Cleanup on unmount
     return () => {
+      clearInterval(checkSceneReady);
       if (gameRef.current) {
         gameRef.current.destroy(true);
         gameRef.current = null;
@@ -126,6 +139,16 @@ const PhaserGame = forwardRef(function PhaserGame({
       }
     }
   }, [segmentIndex]);
+
+  // Update player name for victory screen
+  useEffect(() => {
+    if (gameRef.current && gameRef.current.scene.scenes[0]) {
+      const scene = gameRef.current.scene.scenes[0];
+      if (scene.setPlayerName) {
+        scene.setPlayerName(playerName);
+      }
+    }
+  }, [playerName]);
 
   // Handle steering input (called from external controls)
   const handleSteer = useCallback((direction) => {

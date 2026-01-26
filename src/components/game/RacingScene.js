@@ -78,6 +78,12 @@ class RacingScene extends Phaser.Scene {
     this.boosting = false;
     this.boostTimer = 0;
 
+    // Victory sequence state
+    this.victoryMode = false;
+    this.victoryTimer = 0;
+    this.victoryStopped = false;
+    this.playerName = 'RACER'; // Will be set from outside
+
     // Graphics layers
     this.bgGraphics = this.add.graphics();
     this.roadGraphics = this.add.graphics();
@@ -467,8 +473,32 @@ class RacingScene extends Phaser.Scene {
     const progress = (this.playerZ / this.trackLength) * 100;
     if (progress >= 100 && !this.completed) {
       this.completed = true;
+      this.victoryMode = true;
+      this.victoryTimer = 0;
+      this.onProgress(100); // Ensure progress is reported as 100% to stop timer
       this.onComplete(this.elapsedTime, this.obstaclesHit);
-      // Continue to render but don't update time anymore
+      // Continue to render and move for victory sequence
+    }
+
+    // Victory mode - slow down and stop after 1.5 seconds
+    if (this.victoryMode) {
+      this.victoryTimer += dt;
+
+      // Gradually slow down over 1.5 seconds
+      if (this.victoryTimer < 1.5) {
+        // Continue moving but gradually slow down
+        const slowdownFactor = 1 - (this.victoryTimer / 1.5);
+        this.playerZ += this.speed * slowdownFactor * dt * 0.3;
+      } else if (!this.victoryStopped) {
+        // Fully stopped - center the car
+        this.victoryStopped = true;
+        this.playerX = 0; // Center the car
+      }
+
+      // Keep rendering during victory (with obstacles/traffic hidden)
+      this.renderVictory();
+      this.drawVictoryScene();
+      return; // Skip normal game logic
     }
 
     // Only update elapsed time if race is not completed
@@ -796,6 +826,83 @@ class RacingScene extends Phaser.Scene {
 
     // Draw cloud notification (on top of everything in sky)
     this.drawCloudNotification();
+  }
+
+  // Victory render - same as render() but without traffic, obstacles, barricades
+  renderVictory() {
+    this.bgGraphics.clear();
+    this.roadGraphics.clear();
+    this.spriteGraphics.clear();
+
+    const horizon = this.height * 0.4;
+    const baseSegmentIndex = Math.floor(this.playerZ / this.segmentLength) % this.segments.length;
+    const basePercent = (this.playerZ % this.segmentLength) / this.segmentLength;
+
+    // Draw sky
+    this.bgGraphics.fillGradientStyle(0x72D7EE, 0x72D7EE, 0x87CEEB, 0x87CEEB, 1);
+    this.bgGraphics.fillRect(0, 0, this.width, horizon);
+
+    // Draw base grass below horizon
+    this.bgGraphics.fillStyle(0x10AA10, 1);
+    this.bgGraphics.fillRect(0, horizon, this.width, this.height - horizon);
+
+    const maxy = this.height;
+    const lines = [];
+    const finishLineStart = this.trackLength * 0.98;
+    const finishLineEnd = this.trackLength * 1.0;
+
+    for (let n = 0; n < this.drawDistance; n++) {
+      const segIndex = (baseSegmentIndex + n) % this.segments.length;
+      const seg = this.segments[segIndex];
+      const camDist = (n - basePercent) * this.segmentLength;
+      if (camDist <= 0) continue;
+
+      const scale = this.fieldOfView / camDist;
+      const y = horizon + (scale * this.cameraHeight);
+
+      if (y >= maxy) continue;
+      if (y < horizon - 10) continue;
+
+      const roadShift = -this.playerX * scale * this.roadWidth * 0.02;
+      const w = scale * this.roadWidth;
+      const segmentZ = this.playerZ + camDist;
+      const isFinishLine = segmentZ >= finishLineStart && segmentZ <= finishLineEnd;
+
+      lines.push({
+        y: y, x: this.width / 2 + roadShift, w: w, scale: scale,
+        color: seg.color, segIndex: segIndex, camDist: camDist, isFinishLine: isFinishLine,
+      });
+    }
+
+    // Draw road from far to near
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      const prev = i < lines.length - 1 ? lines[i + 1] : null;
+      if (!prev) continue;
+      this.drawRoadLine(line, prev, line.isFinishLine);
+    }
+
+    // Draw closest segment
+    if (lines.length > 0) {
+      const closest = lines[0];
+      const bottomShift = -this.playerX * this.roadWidth * 0.01;
+      const bottomLine = {
+        y: this.height, x: this.width / 2 + bottomShift,
+        w: closest.w * 1.5, color: closest.color,
+      };
+      this.drawRoadLine(closest, bottomLine, closest.isFinishLine);
+    }
+
+    // NO obstacles, NO traffic in victory mode
+
+    // Reset text visibility
+    this.hideNotificationTexts();
+
+    // Draw overhead gantry signs (keep these visible)
+    this.drawGantrySigns(lines);
+
+    // Draw player car
+    this.drawPlayerCar();
   }
 
   drawRoadLine(line, prev, isFinishLine = false) {
@@ -1600,6 +1707,230 @@ class RacingScene extends Phaser.Scene {
     this.boostTapText.setScale(pulse);
   }
 
+  drawVictoryScene() {
+    // Draw car at center position during victory
+    const carX = this.width / 2;
+    const carY = this.height - 140;
+
+    // Draw victory racer standing next to the car (left side)
+    this.drawVictoryRacer(carX - 70, carY);
+
+    // Draw trophy above the scene
+    this.drawVictoryTrophy(carX, carY - 180);
+
+    // Draw victory text
+    this.drawVictoryText(carX, carY - 240);
+  }
+
+  drawVictoryRacer(x, y) {
+    // Racer is BACK VIEW - showing jersey with name
+    // Improved proportions and racing suit style
+
+    const g = this.spriteGraphics;
+
+    // Scale factor for the racer (make it bigger and more detailed)
+    const s = 1.3;
+
+    // Shadow under racer
+    g.fillStyle(0x000000, 0.4);
+    g.fillEllipse(x, y + 8, 45 * s, 12);
+
+    // === LEGS (Racing suit - dark blue with white stripe) ===
+    // Left leg
+    g.fillStyle(0x1a3a5c, 1);
+    g.fillRoundedRect(x - 15 * s, y - 45 * s, 13 * s, 50 * s, 4);
+    // Right leg
+    g.fillRoundedRect(x + 2 * s, y - 45 * s, 13 * s, 50 * s, 4);
+
+    // White racing stripes on legs
+    g.fillStyle(0xFFFFFF, 0.8);
+    g.fillRect(x - 15 * s + 2, y - 40 * s, 2 * s, 40 * s);
+    g.fillRect(x + 13 * s, y - 40 * s, 2 * s, 40 * s);
+
+    // === RACING BOOTS ===
+    g.fillStyle(0x222222, 1);
+    g.fillRoundedRect(x - 16 * s, y + 2, 14 * s, 10, 3);
+    g.fillRoundedRect(x + 2 * s, y + 2, 14 * s, 10, 3);
+    // Boot soles
+    g.fillStyle(0x111111, 1);
+    g.fillRect(x - 16 * s, y + 8, 14 * s, 4);
+    g.fillRect(x + 2 * s, y + 8, 14 * s, 4);
+
+    // === TORSO/RACING SUIT (Cloud9 Blue with details) ===
+    // Main body
+    g.fillStyle(0x0A4D8C, 1);
+    g.fillRoundedRect(x - 22 * s, y - 85 * s, 44 * s, 50 * s, 6);
+
+    // Shoulders (wider at top)
+    g.fillStyle(0x0A4D8C, 1);
+    g.fillRoundedRect(x - 26 * s, y - 82 * s, 52 * s, 15 * s, 4);
+
+    // White collar area
+    g.fillStyle(0xFFFFFF, 1);
+    g.fillRoundedRect(x - 10 * s, y - 88 * s, 20 * s, 8 * s, 3);
+
+    // Racing suit seams/details
+    g.fillStyle(0x083d6e, 1);
+    g.fillRect(x - 1 * s, y - 80 * s, 2 * s, 45 * s); // Center seam
+
+    // White side stripes (racing style)
+    g.fillStyle(0xFFFFFF, 0.9);
+    g.fillRect(x - 22 * s, y - 75 * s, 3 * s, 38 * s);
+    g.fillRect(x + 19 * s, y - 75 * s, 3 * s, 38 * s);
+
+    // === NAME PLATE ON BACK ===
+    // Name background (darker blue)
+    g.fillStyle(0x062d4f, 1);
+    g.fillRoundedRect(x - 18 * s, y - 70 * s, 36 * s, 18 * s, 3);
+    // Name border
+    g.lineStyle(2, 0xFFFFFF, 0.8);
+    g.strokeRoundedRect(x - 18 * s, y - 70 * s, 36 * s, 18 * s, 3);
+
+    // Player name text
+    if (!this.victoryNameText) {
+      this.victoryNameText = this.add.text(0, 0, this.playerName, {
+        fontSize: '14px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#FFFFFF',
+        stroke: '#000000',
+        strokeThickness: 1,
+      });
+      this.victoryNameText.setOrigin(0.5);
+      this.victoryNameText.setDepth(101);
+    }
+    this.victoryNameText.setText(this.playerName);
+    this.victoryNameText.setPosition(x, y - 61 * s);
+    this.victoryNameText.setVisible(true);
+
+    // === NUMBER ON LOWER BACK ===
+    if (!this.victoryNumberText) {
+      this.victoryNumberText = this.add.text(0, 0, '9', {
+        fontSize: '18px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#FFFFFF',
+        stroke: '#062d4f',
+        strokeThickness: 2,
+      });
+      this.victoryNumberText.setOrigin(0.5);
+      this.victoryNumberText.setDepth(101);
+    }
+    this.victoryNumberText.setPosition(x, y - 42 * s);
+    this.victoryNumberText.setVisible(true);
+
+    // === ARMS (Raised in V victory pose) ===
+    // Skin color
+    const skinColor = 0xE8B89D;
+
+    // Left arm (angled outward and up)
+    g.fillStyle(0x0A4D8C, 1); // Sleeve
+    g.save();
+    // Upper arm
+    g.fillRoundedRect(x - 38 * s, y - 110 * s, 12 * s, 35 * s, 5);
+    // Forearm (skin)
+    g.fillStyle(skinColor, 1);
+    g.fillRoundedRect(x - 40 * s, y - 130 * s, 10 * s, 25 * s, 4);
+    // Gloved hand (fist)
+    g.fillStyle(0x222222, 1);
+    g.fillCircle(x - 35 * s, y - 135 * s, 8 * s);
+
+    // Right arm (angled outward and up)
+    g.fillStyle(0x0A4D8C, 1); // Sleeve
+    g.fillRoundedRect(x + 26 * s, y - 110 * s, 12 * s, 35 * s, 5);
+    // Forearm (skin)
+    g.fillStyle(skinColor, 1);
+    g.fillRoundedRect(x + 30 * s, y - 130 * s, 10 * s, 25 * s, 4);
+    // Gloved hand (fist)
+    g.fillStyle(0x222222, 1);
+    g.fillCircle(x + 35 * s, y - 135 * s, 8 * s);
+
+    // === HEAD (Racing helmet - back view) ===
+    // Helmet main (dark with visor reflection)
+    g.fillStyle(0x1E3A5F, 1);
+    g.fillEllipse(x, y - 100 * s, 18 * s, 20 * s);
+
+    // Helmet top
+    g.fillStyle(0x0A4D8C, 1);
+    g.fillEllipse(x, y - 108 * s, 16 * s, 12 * s);
+
+    // Helmet padding/neck area
+    g.fillStyle(0x333333, 1);
+    g.fillRoundedRect(x - 12 * s, y - 88 * s, 24 * s, 6 * s, 2);
+  }
+
+  drawVictoryTrophy(x, y) {
+    const g = this.spriteGraphics;
+
+    // Trophy glow
+    const pulse = 1 + Math.sin(this.victoryTimer * 4) * 0.1;
+
+    g.fillStyle(0xFFD700, 0.3);
+    g.fillCircle(x, y, 40 * pulse);
+
+    // Trophy cup
+    g.fillStyle(0xFFD700, 1);
+    // Main cup body
+    g.fillRoundedRect(x - 20, y - 15, 40, 35, 5);
+
+    // Cup rim (wider top)
+    g.fillStyle(0xFFE44D, 1);
+    g.fillRoundedRect(x - 25, y - 20, 50, 12, 4);
+
+    // Cup handles
+    g.fillStyle(0xFFD700, 1);
+    g.fillRoundedRect(x - 32, y - 10, 10, 20, 5);
+    g.fillRoundedRect(x + 22, y - 10, 10, 20, 5);
+
+    // Base
+    g.fillStyle(0x8B7355, 1);
+    g.fillRoundedRect(x - 15, y + 18, 30, 10, 3);
+    g.fillRoundedRect(x - 20, y + 26, 40, 8, 2);
+
+    // Star on trophy
+    g.fillStyle(0xFFFFFF, 1);
+    this.drawStar(x, y, 8, 5, 4);
+  }
+
+  drawStar(cx, cy, outerR, innerR, points) {
+    const g = this.spriteGraphics;
+    const step = Math.PI / points;
+
+    g.beginPath();
+    for (let i = 0; i < 2 * points; i++) {
+      const r = i % 2 === 0 ? outerR : innerR;
+      const angle = i * step - Math.PI / 2;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      if (i === 0) {
+        g.moveTo(x, y);
+      } else {
+        g.lineTo(x, y);
+      }
+    }
+    g.closePath();
+    g.fillPath();
+  }
+
+  drawVictoryText(x, y) {
+    // "FINISH!" text
+    if (!this.victoryFinishText) {
+      this.victoryFinishText = this.add.text(0, 0, '🏁 FINISH! 🏁', {
+        fontSize: '32px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#FFFFFF',
+        stroke: '#000000',
+        strokeThickness: 4,
+      });
+      this.victoryFinishText.setOrigin(0.5);
+      this.victoryFinishText.setDepth(150);
+    }
+
+    // Pulsing animation
+    const scale = 1 + Math.sin(this.victoryTimer * 5) * 0.1;
+    this.victoryFinishText.setPosition(x, y);
+    this.victoryFinishText.setScale(scale);
+    this.victoryFinishText.setVisible(true);
+  }
+
   // External controls
   steer(direction) {
     this.steerDirection = direction;
@@ -1631,6 +1962,12 @@ class RacingScene extends Phaser.Scene {
 
   setSegmentIndex(index) {
     this.segmentIndex = index;
+  }
+
+  setPlayerName(name) {
+    // Store first 5 characters of first name for jersey display
+    const firstName = (name || 'RACER').split(' ')[0];
+    this.playerName = firstName.substring(0, 5).toUpperCase();
   }
 
   // ========== NOTIFICATION SYSTEM METHODS ==========

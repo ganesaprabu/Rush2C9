@@ -39,3 +39,8 @@ firebase-debug.log
 # Misc
 *.local
 .cache/
+
+# Temp files
+temp/
+tmp/
+*.tmp

@@ -10,7 +10,7 @@ import {
   generateRouteSegments,
   getSpeedRating
 } from '../../data/gameData';
-import { updatePlayerScore } from '../../services/playerService';
+import { updatePlayerScore, getPlayer } from '../../services/playerService';
 import PhaserGame from '../game/PhaserGame';
 import GameHUD from '../game/GameHUD';
 import ControlButtons from '../game/ControlButtons';
@@ -89,7 +89,9 @@ function GameScreen() {
       // Show celebration overlay on the racing screen!
       setShowCelebration(true);
 
-      // After 5 seconds, transition to pit stop or results
+      // TEMPORARILY DISABLED - Auto navigation after 5 seconds
+      // Uncomment below to restore auto-transition to pit stop/results
+      /*
       setTimeout(() => {
         setShowCelebration(false);
         if (currentSegment >= 2) {
@@ -100,6 +102,7 @@ function GameScreen() {
           setGameState('pit_stop');
         }
       }, 5000);
+      */
     },
     [currentSegment]
   );
@@ -285,6 +288,7 @@ function GameScreen() {
             roadType={segment?.roadType || 'highway'}
             credits={credits}
             segmentIndex={currentSegment}
+            playerName={getPlayer()?.firstName || 'RACER'}
             onProgress={handleProgress}
             onStats={handleStats}
             onObstacleHit={handleObstacleHit}
@@ -321,7 +325,7 @@ function GameScreen() {
           />
         </div>
 
-        {/* Celebration Overlay - shows on finish line */}
+        {/* Celebration Overlay - confetti only, victory scene is in Phaser canvas */}
         {showCelebration && (
           <>
             {/* Confetti particles */}
@@ -346,22 +350,6 @@ function GameScreen() {
                   />
                 </div>
               ))}
-            </div>
-
-            {/* Celebration message overlay */}
-            <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none">
-              <div className="text-center bg-black/70 backdrop-blur-sm rounded-2xl px-8 py-6 mx-4">
-                <div className="text-6xl mb-2 animate-bounce">🏁</div>
-                <h1 className="text-2xl font-bold text-white mb-1 animate-pulse">
-                  {currentSegment >= 2 ? 'JOURNEY COMPLETE!' : 'SEGMENT COMPLETE!'}
-                </h1>
-                <p className="text-cyan-400">
-                  {segments[currentSegment]?.from} → {segments[currentSegment]?.to}
-                </p>
-                <p className="text-yellow-400 text-xl font-bold mt-2">
-                  ⏱️ {elapsedTime.toFixed(1)}s
-                </p>
-              </div>
             </div>
 
             {/* Confetti animation styles */}
