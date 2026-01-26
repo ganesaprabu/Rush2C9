@@ -68,7 +68,8 @@
 |-------|------|--------|
 | 3.1 | Game Data Architecture | ✅ Complete |
 | 3.2 | City Reveal Screen (Auto-Advance) | ✅ Complete |
-| 3.3 | Phaser Racing Game (CORE) | ⚠️ In Progress (Mobile touch issue) |
+| 3.3 | Phaser Racing Game (CORE) | ✅ Complete |
+| 3.3.1 | Victory Scene & Gantry Signs | ✅ Complete |
 | 3.4 | Pit Stop Screen | ⏳ Pending |
 | 3.5 | Segment Loop | ⏳ Pending |
 | 3.6 | Results Screen + Journey Map | ⏳ Pending |
@@ -91,7 +92,7 @@
 - [x] Auto-advance after 3 seconds
 - [x] "GET READY" countdown
 
-**3.3 Phaser Racing Game** ⭐ CORE — ⚠️ In Progress
+**3.3 Phaser Racing Game** ⭐ CORE — ✅ Complete
 - [x] Phaser canvas in React
 - [x] Pseudo-3D road (OutRun style)
 - [x] Default vehicle: Car
@@ -103,7 +104,9 @@
 - [x] Road type indicator in HUD
 - [x] Steering range increased (±3.0), speed 8.0
 - [x] Car visual movement (not just road shift)
-- [ ] **⚠️ PENDING: Mobile touch responsiveness** — taps not registering, only long press works
+- [x] Overhead gantry signs (location + message boards)
+- [x] Victory scene with racer celebration
+- [ ] **⚠️ Known Issue: Mobile touch responsiveness** — taps not registering, only long press works
 
 **3.4 Pit Stop Screen**
 - [ ] "Segment Complete" celebration
@@ -500,17 +503,23 @@ Rush2C9 — Fans race from random cities worldwide to reach Cloud9's arenas (LCS
 | `src/data/gameData.js` | Game constants, vehicles, roads |
 | `src/data/notificationData.js` | Cloud messages, tips, announcements |
 
-**Uncommitted Changes (Ready to Commit):**
-```
-modified:   .gitignore
-modified:   README.md
-modified:   src/components/game/PhaserGame.jsx
-modified:   src/components/game/RacingScene.js
-modified:   src/components/screens/GameScreen.jsx
-new file:   src/components/game/VictoryRacer.jsx (unused, can delete)
-```
+**Committed:** ✅ `717fc41` — "Add victory scene with racer celebration and improve gantry signs"
+
+**Files Changed:**
+| File | Changes |
+|------|---------|
+| `.gitignore` | Added temp file patterns |
+| `README.md` | Server startup documentation |
+| `docs/PROGRESS.md` | Session documentation |
+| `src/components/game/PhaserGame.jsx` | playerName prop, scene polling |
+| `src/components/game/RacingScene.js` | Victory scene, gantry sign fixes |
+| `src/components/screens/GameScreen.jsx` | firstName fix, simplified overlay |
+
+**Cleanup Needed:**
+- `src/components/game/VictoryRacer.jsx` — Untracked, unused (can delete)
 
 **Next Session:**
+- Delete unused VictoryRacer.jsx file
 - Re-enable auto-navigation after victory (currently commented out)
 - Consider adding segment complete message to victory scene
 - Test full 3-segment game flow
