@@ -131,15 +131,15 @@ function GameScreen() {
   // Pit Stop - NO auto-countdown anymore
   // User must click to proceed to next segment
 
-  // Racing timer - track elapsed time
+  // Racing timer - track elapsed time (stops when race completes at 100% progress)
   useEffect(() => {
-    if (gameState === 'racing') {
+    if (gameState === 'racing' && progress < 100) {
       const interval = setInterval(() => {
         setElapsedTime((prev) => prev + 0.1);
       }, 100);
       return () => clearInterval(interval);
     }
-  }, [gameState]);
+  }, [gameState, progress]);
 
   // Switch vehicle at pit stop
   const handleSwitchVehicle = useCallback(

@@ -322,34 +322,39 @@ class RacingScene extends Phaser.Scene {
     // Calculate finish zone - last 15% of track has reduced traffic
     const finishZoneStart = this.trackLength * 0.85;
 
-    // Alternate sides for balanced traffic
-    let lastSide = 1;
+    // ========== BALANCED TRAFFIC PLACEMENT ==========
+    // Strictly alternate sides, with fixed lane positions (no randomness in X)
+    const totalCars = 10;
+    let currentSide = 1;
 
-    for (let i = 0; i < 12; i++) {
-      // Alternate between left and right lanes for zig-zag challenge
-      lastSide = -lastSide;
+    for (let i = 0; i < totalCars; i++) {
+      // Strictly alternate sides for guaranteed zig-zag
+      currentSide = -currentSide;
 
-      // 40% go opposite direction (oncoming traffic)
-      // 60% go same direction but slower
-      const goingOpposite = i % 3 === 0; // Every 3rd car is oncoming (more predictable)
+      // Every 4th car is oncoming (25%)
+      const goingOpposite = i % 4 === 0;
 
       let carSpeed;
       let laneX;
 
       if (goingOpposite) {
-        // Oncoming traffic - alternating sides
-        carSpeed = -this.maxSpeed * 0.3;
-        laneX = lastSide * (0.4 + Math.random() * 0.3); // Alternate left/right
+        // Oncoming traffic - fixed position in lane
+        carSpeed = -this.maxSpeed * 0.25;
+        laneX = currentSide * 0.55; // Fixed position: -0.55 or +0.55
       } else {
-        // Same direction traffic - alternating sides
-        carSpeed = this.maxSpeed * 0.1;
-        laneX = lastSide * (0.3 + Math.random() * 0.4); // Alternate left/right
+        // Same direction traffic - fixed position in lane
+        carSpeed = this.maxSpeed * 0.08;
+        laneX = currentSide * 0.5; // Fixed position: -0.5 or +0.5
       }
 
-      // Spread cars evenly across the track for consistent challenge
-      const maxZ = finishZoneStart - 100 * this.segmentLength;
-      const zSpacing = maxZ / 12;
-      const carZ = (50 + i * (zSpacing / this.segmentLength) + Math.random() * (zSpacing / this.segmentLength * 0.5)) * this.segmentLength;
+      // Spread cars EVENLY across the track - no random clustering
+      const startZ = 60 * this.segmentLength;
+      const endZ = finishZoneStart - 50 * this.segmentLength;
+      const zRange = endZ - startZ;
+      const zSpacing = zRange / totalCars;
+
+      // Fixed spacing with small offset to avoid overlapping with obstacles
+      const carZ = startZ + i * zSpacing + zSpacing * 0.3;
 
       this.cars.push({
         z: carZ,
@@ -367,49 +372,44 @@ class RacingScene extends Phaser.Scene {
   placeObstacles() {
     this.obstacles = [];
 
-    // Calculate finish zone - no obstacles in last 15%
-    const finishZoneStart = this.trackLength * 0.85;
+    // Calculate finish zone - no obstacles in last 5% (very close to finish)
+    const finishZoneStart = this.trackLength * 0.95;
 
-    // Number of obstacles based on segment (harder = more obstacles)
-    const numHoles = 4 + this.segmentIndex * 2;      // 4, 6, 8 holes per segment
-    const numBarricades = 3 + this.segmentIndex * 2; // 3, 5, 7 barricades per segment
+    // Total obstacles that block lanes (forcing zig-zag)
+    // More obstacles = more zig-zag required
+    const totalObstacles = 10 + this.segmentIndex * 2; // 10, 12, 14 per segment
 
-    // Track last side to alternate and ensure zig-zag pattern
-    let lastSide = Math.random() < 0.5 ? 1 : -1;
+    // ========== BALANCED OBSTACLE PLACEMENT ==========
+    // Start with OPPOSITE side from first traffic car (which starts at side = -1)
+    // This ensures obstacles and cars don't cluster on same side
+    let currentSide = 1; // Start opposite to traffic
 
-    // Place holes (dark spots on road) - alternating sides
-    for (let i = 0; i < numHoles; i++) {
-      // Spread holes evenly across the track
-      const zRange = (finishZoneStart / this.segmentLength - 100);
-      const z = (80 + (i / numHoles) * zRange + Math.random() * (zRange / numHoles)) * this.segmentLength;
+    // Spread obstacles from 10% to 95% of track (covers almost entire race)
+    const startZ = this.trackLength * 0.10;  // Start at 10% (~0.5km)
+    const endZ = finishZoneStart;             // End at 95% (~4.75km)
+    const zRange = endZ - startZ;
+    const spacing = zRange / totalObstacles;
 
-      // Alternate sides with some randomness
-      lastSide = -lastSide; // Flip side
-      const sideOffset = lastSide * (0.3 + Math.random() * 0.5); // 0.3 to 0.8 on each side
+    for (let i = 0; i < totalObstacles; i++) {
+      // Strictly alternate sides for guaranteed zig-zag
+      currentSide = -currentSide;
 
-      this.obstacles.push({
-        type: 'hole',
-        z: z,
-        x: sideOffset,
-        width: 0.3,  // Collision width
-      });
-    }
+      // Fixed spacing - NO randomness to prevent clustering
+      const z = startZ + i * spacing + spacing * 0.5;
 
-    // Place barricades (striped barriers) - alternating sides
-    for (let i = 0; i < numBarricades; i++) {
-      // Spread barricades evenly across the track
-      const zRange = (finishZoneStart / this.segmentLength - 120);
-      const z = (100 + (i / numBarricades) * zRange + Math.random() * (zRange / numBarricades)) * this.segmentLength;
+      // Position to block one lane (left or right half of road)
+      // x = -0.5 blocks left lane, x = 0.5 blocks right lane
+      const lanePosition = currentSide * 0.5;
 
-      // Alternate sides with some randomness
-      lastSide = -lastSide; // Flip side
-      const sideOffset = lastSide * (0.25 + Math.random() * 0.45); // 0.25 to 0.7 on each side
+      // Alternate between holes and barricades
+      const type = i % 2 === 0 ? 'hole' : 'barricade';
 
       this.obstacles.push({
-        type: 'barricade',
+        type: type,
         z: z,
-        x: sideOffset,
-        width: 0.35,  // Collision width
+        x: lanePosition,
+        side: currentSide, // -1 = left lane blocked, 1 = right lane blocked
+        width: 0.55,  // Slightly narrower to give small margin for passing
       });
     }
 
@@ -428,7 +428,18 @@ class RacingScene extends Phaser.Scene {
       return; // Don't update game logic during countdown
     }
 
-    this.elapsedTime += dt;
+    // Check if race should be completed (before updating elapsed time)
+    const progress = (this.playerZ / this.trackLength) * 100;
+    if (progress >= 100 && !this.completed) {
+      this.completed = true;
+      this.onComplete(this.elapsedTime, this.obstaclesHit);
+      // Continue to render but don't update time anymore
+    }
+
+    // Only update elapsed time if race is not completed
+    if (!this.completed) {
+      this.elapsedTime += dt;
+    }
 
     // ========== BOOST COOLDOWN SYSTEM ==========
     if (!this.boostAvailable && !this.boosting) {
@@ -519,18 +530,19 @@ class RacingScene extends Phaser.Scene {
     // Collisions
     this.checkCollisions();
 
-    // Calculate progress (needed for completion check)
-    const progress = (this.playerZ / this.trackLength) * 100;
-
     // Stats updates - throttled to avoid fuzzy display
+    // Note: 'progress' is already calculated at top of update()
     const now = Date.now();
     if (now - this.lastStatsUpdate >= this.statsUpdateInterval) {
       this.lastStatsUpdate = now;
 
       this.onProgress(Math.min(100, Math.floor(progress)));
 
-      // Calculate distance traveled
-      const distanceKm = (this.playerZ / this.trackLength) * this.segmentDistanceKm;
+      // Calculate distance traveled - cap at segment distance (don't show 5.2 when max is 5)
+      const distanceKm = Math.min(
+        this.segmentDistanceKm,
+        (this.playerZ / this.trackLength) * this.segmentDistanceKm
+      );
 
       // ========== SPEED PROGRESSION ==========
       // Speed increases every 1 km traveled
@@ -562,11 +574,7 @@ class RacingScene extends Phaser.Scene {
       });
     }
 
-    if (progress >= 100 && !this.completed) {
-      this.completed = true;
-      this.onComplete(this.elapsedTime, this.obstaclesHit);
-      return;
-    }
+    // Note: Completion check moved to top of update() to stop timer immediately
 
     // Update notifications
     this.updateNotifications(dt);
@@ -576,6 +584,13 @@ class RacingScene extends Phaser.Scene {
   }
 
   checkCollisions() {
+    // ========== COORDINATE SYSTEM FIX ==========
+    // playerX ranges from -3.0 to 3.0 (screen movement)
+    // car.x and obstacle.x range from -1.0 to 1.0 (lane position)
+    // We need to normalize playerX to the same scale for collision detection
+    // playerX / 3.0 gives us a value from -1.0 to 1.0
+    const normalizedPlayerX = this.playerX / 3.0;
+
     for (const car of this.cars) {
       // Calculate distance in front of player (positive = ahead of us)
       let dz = car.z - this.playerZ;
@@ -584,11 +599,10 @@ class RacingScene extends Phaser.Scene {
       if (dz < -this.trackLength / 2) dz += this.trackLength;
       if (dz > this.trackLength / 2) dz -= this.trackLength;
 
-      // IMPROVED COLLISION BOX:
-      // Z collision: car must be within 200 units ahead or 80 behind (wider range)
-      // X collision: lateral distance check with wider tolerance (0.7 instead of 0.5)
+      // Z collision: car must be within 200 units ahead or 80 behind
+      // X collision: compare normalized positions with tolerance for car width
       const zCollision = dz > -80 && dz < 200;
-      const xCollision = Math.abs(car.x - this.playerX) < 0.7;
+      const xCollision = Math.abs(car.x - normalizedPlayerX) < 0.35; // ~35% of lane width
 
       if (zCollision && xCollision && !this.isHit) {
         this.isHit = true;
@@ -613,9 +627,13 @@ class RacingScene extends Phaser.Scene {
         if (dz < -this.trackLength / 2) dz += this.trackLength;
         if (dz > this.trackLength / 2) dz -= this.trackLength;
 
-        // Collision detection
+        // Z collision detection
         const zCollision = dz > -50 && dz < 150;
-        const xCollision = Math.abs(obstacle.x - this.playerX) < obstacle.width;
+
+        // X collision: obstacle.x is lane position (-0.5 or 0.5)
+        // obstacle.width is how much of the road it blocks (0.6 = 60% of half-road)
+        // Use normalized playerX for comparison
+        const xCollision = Math.abs(obstacle.x - normalizedPlayerX) < obstacle.width;
 
         if (zCollision && xCollision && !this.isHit) {
           this.isHit = true;
@@ -959,47 +977,99 @@ class RacingScene extends Phaser.Scene {
       const scale = line.scale;
 
       if (obstacle.type === 'hole') {
-        this.drawHole(screenX, screenY, scale);
+        this.drawHole(screenX, screenY, scale, obstacle.side);
       } else if (obstacle.type === 'barricade') {
-        this.drawBarricade(screenX, screenY, scale);
+        this.drawBarricade(screenX, screenY, scale, obstacle.side);
       }
     }
   }
 
-  drawHole(x, y, scale) {
-    // Dark elliptical hole in the road
-    const holeW = Math.max(8, scale * 400);
-    const holeH = Math.max(4, scale * 150);
+  drawHole(x, y, scale, side) {
+    // Large pothole/crater blocking one lane - MUCH LARGER
+    const holeW = Math.max(25, scale * 1200);  // Even wider for visibility
+    const holeH = Math.max(12, scale * 450);   // Taller too
 
-    if (holeW < 5) return;
+    if (holeW < 10) return;
 
-    // Outer dark ring (shadow)
-    this.roadGraphics.fillStyle(0x222222, 0.8);
-    this.roadGraphics.fillEllipse(x, y, holeW * 1.15, holeH * 1.15);
+    // Danger zone outer ring (red/orange warning)
+    this.roadGraphics.fillStyle(0xFF4400, 0.4);
+    this.roadGraphics.fillEllipse(x, y, holeW * 1.5, holeH * 1.5);
+
+    // Cracked road around hole (lighter gray)
+    this.roadGraphics.fillStyle(0x555555, 0.8);
+    this.roadGraphics.fillEllipse(x, y, holeW * 1.3, holeH * 1.3);
+
+    // Outer dark ring (shadow/edge)
+    this.roadGraphics.fillStyle(0x333333, 1);
+    this.roadGraphics.fillEllipse(x, y, holeW * 1.1, holeH * 1.1);
 
     // Main hole (very dark)
     this.roadGraphics.fillStyle(0x111111, 1);
     this.roadGraphics.fillEllipse(x, y, holeW, holeH);
 
-    // Inner depth effect (even darker)
-    this.roadGraphics.fillStyle(0x050505, 1);
-    this.roadGraphics.fillEllipse(x, y - holeH * 0.1, holeW * 0.7, holeH * 0.6);
+    // Inner depth effect (pitch black center)
+    this.roadGraphics.fillStyle(0x000000, 1);
+    this.roadGraphics.fillEllipse(x, y + holeH * 0.1, holeW * 0.6, holeH * 0.5);
+
+    // Warning marks around hole (yellow/orange stripes)
+    if (holeW > 15) {
+      // Hazard stripes around the hole
+      this.roadGraphics.fillStyle(0xFFAA00, 1);
+      const stripeW = Math.max(4, holeW * 0.08);
+      // Left warning stripe
+      this.roadGraphics.fillRect(x - holeW * 0.75, y - holeH * 0.3, stripeW, holeH * 0.6);
+      // Right warning stripe
+      this.roadGraphics.fillRect(x + holeW * 0.67, y - holeH * 0.3, stripeW, holeH * 0.6);
+      // Top warning stripe
+      this.roadGraphics.fillRect(x - holeW * 0.3, y - holeH * 0.7, holeW * 0.6, stripeW);
+    }
+
+    // "DANGER" text above hole when large enough
+    if (holeW > 35) {
+      if (!this.holeWarningTexts) {
+        this.holeWarningTexts = [];
+      }
+
+      let textObj = this.holeWarningTexts.find(t => !t.visible);
+      if (!textObj) {
+        textObj = this.add.text(0, 0, '⚠ HOLE', {
+          fontSize: '10px',
+          fontFamily: 'Arial Black, sans-serif',
+          color: '#FFFFFF',
+          backgroundColor: '#CC0000',
+          padding: { x: 3, y: 2 },
+        });
+        textObj.setOrigin(0.5);
+        textObj.setDepth(100);
+        this.holeWarningTexts.push(textObj);
+      }
+
+      const fontSize = Math.max(8, Math.min(16, holeW * 0.15));
+      textObj.setFontSize(fontSize);
+      textObj.setPosition(x, y - holeH * 0.8);
+      textObj.setVisible(true);
+      textObj.setScale(Math.min(1, scale * 20));
+    }
   }
 
-  drawBarricade(x, y, scale) {
-    // Striped construction barricade
-    const barW = Math.max(12, scale * 500);
-    const barH = Math.max(8, scale * 250);
+  drawBarricade(x, y, scale, side) {
+    // Large construction barricade blocking one lane - LARGER
+    const barW = Math.max(25, scale * 1100);   // Even wider
+    const barH = Math.max(18, scale * 550);    // Taller
 
-    if (barW < 6) return;
+    if (barW < 12) return;
 
-    // Main barricade body (orange/red stripes)
-    const stripeCount = 4;
+    // Support frame (dark) - wider for visibility
+    this.spriteGraphics.fillStyle(0x333333, 1);
+    this.spriteGraphics.fillRect(x - barW / 2 - 4, y - barH - 6, barW + 8, barH + 10);
+
+    // Main barricade body with diagonal stripes (orange/white)
+    const stripeCount = 8;
     const stripeW = barW / stripeCount;
 
     for (let i = 0; i < stripeCount; i++) {
-      // Alternate red and white stripes
-      this.spriteGraphics.fillStyle(i % 2 === 0 ? 0xFF4444 : 0xFFFFFF, 1);
+      // Alternate orange and white stripes
+      this.spriteGraphics.fillStyle(i % 2 === 0 ? 0xFF6600 : 0xFFFFFF, 1);
       this.spriteGraphics.fillRect(
         x - barW / 2 + i * stripeW,
         y - barH,
@@ -1008,16 +1078,76 @@ class RacingScene extends Phaser.Scene {
       );
     }
 
-    // Top edge (darker)
-    this.spriteGraphics.fillStyle(0x333333, 1);
-    this.spriteGraphics.fillRect(x - barW / 2, y - barH - 2, barW, 3);
+    // Top reflective strip (bright yellow)
+    this.spriteGraphics.fillStyle(0xFFEE00, 1);
+    this.spriteGraphics.fillRect(x - barW / 2, y - barH - 4, barW, 6);
 
-    // Support legs
-    if (barW > 15) {
-      this.spriteGraphics.fillStyle(0x666666, 1);
-      const legW = Math.max(3, barW * 0.08);
-      this.spriteGraphics.fillRect(x - barW / 3, y - 3, legW, 4);
-      this.spriteGraphics.fillRect(x + barW / 3 - legW, y - 3, legW, 4);
+    // Bottom reflective strip
+    this.spriteGraphics.fillStyle(0xFFEE00, 1);
+    this.spriteGraphics.fillRect(x - barW / 2, y - 4, barW, 4);
+
+    // "DIVERSION" text on barricade - show at smaller sizes now
+    if (barW > 25) {
+      if (!this.diversionTexts) {
+        this.diversionTexts = [];
+      }
+
+      // Create or reuse text object
+      let textObj = this.diversionTexts.find(t => !t.visible);
+      if (!textObj) {
+        textObj = this.add.text(0, 0, '⚠ DIVERSION ⚠', {
+          fontSize: '12px',
+          fontFamily: 'Arial Black, sans-serif',
+          color: '#000000',
+          backgroundColor: '#FFEE00',
+          padding: { x: 4, y: 2 },
+        });
+        textObj.setOrigin(0.5);
+        textObj.setDepth(100);
+        this.diversionTexts.push(textObj);
+      }
+
+      const fontSize = Math.max(8, Math.min(18, barW * 0.14));
+      textObj.setFontSize(fontSize);
+      textObj.setPosition(x, y - barH / 2);
+      textObj.setVisible(true);
+      textObj.setScale(Math.min(1.2, scale * 18));
+    }
+
+    // Support legs (thicker)
+    this.spriteGraphics.fillStyle(0x555555, 1);
+    const legW = Math.max(5, barW * 0.12);
+    const legH = Math.max(8, barH * 0.35);
+    this.spriteGraphics.fillRect(x - barW / 3, y - legH, legW, legH);
+    this.spriteGraphics.fillRect(x + barW / 3 - legW, y - legH, legW, legH);
+
+    // Large green arrow pointing to safe side
+    if (barW > 20) {
+      // Arrow background circle
+      const arrowX = x + (side < 0 ? barW * 0.7 : -barW * 0.7);
+      const arrowSize = Math.max(10, barW * 0.18);
+
+      // Green circle background
+      this.spriteGraphics.fillStyle(0x00AA00, 1);
+      this.spriteGraphics.fillCircle(arrowX, y - barH / 2, arrowSize * 0.8);
+
+      // White arrow inside
+      this.spriteGraphics.fillStyle(0xFFFFFF, 1);
+      if (side < 0) {
+        // Obstacle on left, arrow points right
+        this.spriteGraphics.fillTriangle(
+          arrowX + arrowSize * 0.4, y - barH / 2,
+          arrowX - arrowSize * 0.3, y - barH / 2 - arrowSize * 0.4,
+          arrowX - arrowSize * 0.3, y - barH / 2 + arrowSize * 0.4
+        );
+      } else {
+        // Obstacle on right, arrow points left
+        this.spriteGraphics.fillTriangle(
+          arrowX - arrowSize * 0.4, y - barH / 2,
+          arrowX + arrowSize * 0.3, y - barH / 2 - arrowSize * 0.4,
+          arrowX + arrowSize * 0.3, y - barH / 2 + arrowSize * 0.4
+        );
+      }
     }
   }
 
@@ -1367,6 +1497,20 @@ class RacingScene extends Phaser.Scene {
     // Hide text objects when not in use
     if (this.cloudText) this.cloudText.setVisible(false);
     if (this.boostTapText) this.boostTapText.setVisible(false);
+
+    // Hide all diversion texts (will be shown again in drawBarricade if needed)
+    if (this.diversionTexts) {
+      for (const text of this.diversionTexts) {
+        text.setVisible(false);
+      }
+    }
+
+    // Hide all hole warning texts (will be shown again in drawHole if needed)
+    if (this.holeWarningTexts) {
+      for (const text of this.holeWarningTexts) {
+        text.setVisible(false);
+      }
+    }
   }
 }
 
