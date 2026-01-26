@@ -314,18 +314,19 @@ export const SEGMENT_CONFIG = {
   distances: [5, 7, 9],
 
   // Starting speed for each segment (km/h display) - Segment 1, 2, 3
-  startSpeed: [125, 150, 175],
+  startSpeed: [175, 200, 225],
 
   // Speed increases by this amount every 1 km traveled
   speedIncreasePerKm: 5,
 
   // Maximum speed cap (km/h)
-  maxSpeed: 200,
+  maxSpeed: 250,
 };
 
 export const BOOST_CONFIG = {
-  // Boost adds this to current speed (km/h)
-  amount: 25,
+  // Boost multiplier (1.5 = 50% speed increase)
+  // This affects BOTH actual speed and display speed
+  multiplier: 1.5,
 
   // Boost lasts this many seconds (temporary)
   duration: 3,

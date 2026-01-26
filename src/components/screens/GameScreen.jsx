@@ -54,6 +54,7 @@ function GameScreen() {
 
   // UI state
   const [countdown, setCountdown] = useState(3);
+  const [showContinueButton, setShowContinueButton] = useState(false); // Show after celebration delay
 
   // Racing state
   const [progress, setProgress] = useState(0);
@@ -79,6 +80,19 @@ function GameScreen() {
     setGameState('racing');
   }, []);
 
+  // Continue from victory celebration to pit stop or results
+  const handleContinueFromVictory = useCallback(() => {
+    setShowCelebration(false);
+    setShowContinueButton(false);
+    if (currentSegment >= 2) {
+      // All 3 segments done - go to results
+      setGameState('results');
+    } else {
+      // More segments - go to pit stop
+      setGameState('pit_stop');
+    }
+  }, [currentSegment]);
+
   // Called when a racing segment completes
   const handleSegmentComplete = useCallback(
     (time, obstaclesHit = 0) => {
@@ -88,23 +102,14 @@ function GameScreen() {
 
       // Show celebration overlay on the racing screen!
       setShowCelebration(true);
+      setShowContinueButton(false);
 
-      // TEMPORARILY DISABLED - Auto navigation after 5 seconds
-      // Uncomment below to restore auto-transition to pit stop/results
-      /*
+      // Show "Continue" button after 3 seconds of celebration
       setTimeout(() => {
-        setShowCelebration(false);
-        if (currentSegment >= 2) {
-          // All 3 segments done - go to results
-          setGameState('results');
-        } else {
-          // More segments - go to pit stop
-          setGameState('pit_stop');
-        }
-      }, 5000);
-      */
+        setShowContinueButton(true);
+      }, 3000);
     },
-    [currentSegment]
+    []
   );
 
   // ===== STATE TRANSITIONS =====
@@ -315,17 +320,19 @@ function GameScreen() {
           </div>
         )}
 
-        {/* Control Buttons - positioned at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 max-w-md mx-auto z-20">
-          <ControlButtons
-            onSteer={handleSteer}
-            onBoost={handleBoostPress}
-            boostReady={boostReady}
-            isBoosting={isBoosting}
-          />
-        </div>
+        {/* Control Buttons - positioned at bottom, hidden when continue button shows */}
+        {!showContinueButton && (
+          <div className="absolute bottom-0 left-0 right-0 max-w-md mx-auto z-20">
+            <ControlButtons
+              onSteer={handleSteer}
+              onBoost={handleBoostPress}
+              boostReady={boostReady}
+              isBoosting={isBoosting}
+            />
+          </div>
+        )}
 
-        {/* Celebration Overlay - confetti only, victory scene is in Phaser canvas */}
+        {/* Celebration Overlay - confetti + continue button */}
         {showCelebration && (
           <>
             {/* Confetti particles */}
@@ -352,6 +359,18 @@ function GameScreen() {
               ))}
             </div>
 
+            {/* Continue Button - appears after 3 seconds, positioned at very bottom */}
+            {showContinueButton && (
+              <div className="absolute bottom-6 left-0 right-0 flex justify-center z-40">
+                <button
+                  onClick={handleContinueFromVictory}
+                  className="px-8 py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg text-white shadow-lg transform transition-all hover:scale-105 animate-bounce-slow"
+                >
+                  {currentSegment >= 2 ? '🏆 View Results' : '➡️ Continue to Pit Stop'}
+                </button>
+              </div>
+            )}
+
             {/* Confetti animation styles */}
             <style>{`
               @keyframes confetti {
@@ -366,6 +385,13 @@ function GameScreen() {
               }
               .animate-confetti {
                 animation: confetti linear forwards;
+              }
+              @keyframes bounce-slow {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+              }
+              .animate-bounce-slow {
+                animation: bounce-slow 1.5s ease-in-out infinite;
               }
             `}</style>
           </>

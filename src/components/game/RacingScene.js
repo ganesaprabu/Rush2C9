@@ -48,10 +48,18 @@ class RacingScene extends Phaser.Scene {
     this.cameraHeight = 1000;
     this.fieldOfView = 100;
 
-    // Speed - keep it slow
-    this.maxSpeed = 12 * this.segmentLength;
-    this.accel = 6 * this.segmentLength;
-    this.decel = 10 * this.segmentLength;
+    // ========== SPEED SYSTEM (LINKED TO DISPLAY SPEED) ==========
+    // Base speed unit - scales with display speed
+    // At 100 km/h display = 1.0x multiplier, at 200 km/h = 2.0x multiplier
+    this.baseSpeedUnit = this.segmentLength;
+
+    // Reference speed (100 km/h = baseline)
+    this.referenceDisplaySpeed = 100;
+
+    // These will be recalculated based on currentDisplaySpeed
+    this.maxSpeed = 12 * this.baseSpeedUnit;  // Will be updated dynamically
+    this.accel = 6 * this.baseSpeedUnit;
+    this.decel = 10 * this.baseSpeedUnit;
     this.centrifugal = 0.3;
 
     // Player
@@ -122,7 +130,11 @@ class RacingScene extends Phaser.Scene {
     // Max speed cap
     this.maxDisplaySpeed = SEGMENT_CONFIG.maxSpeed;
 
-    // Start with some internal speed
+    // ========== LINK DISPLAY SPEED TO ACTUAL SPEED ==========
+    // Update maxSpeed based on initial display speed
+    this.updateActualSpeedFromDisplay();
+
+    // Start with some internal speed (based on the new maxSpeed)
     this.speed = this.maxSpeed * 0.5;
 
     // ========== BOOST COOLDOWN SYSTEM ==========
@@ -130,7 +142,7 @@ class RacingScene extends Phaser.Scene {
     this.boostAvailable = false; // Is boost ready to use?
     this.boostCooldownDuration = BOOST_CONFIG.cooldown;
     this.boostEffectDuration = BOOST_CONFIG.duration;
-    this.boostSpeedAmount = BOOST_CONFIG.amount;
+    this.boostMultiplier = BOOST_CONFIG.multiplier; // 1.5 = 50% speed boost
 
     // Start with boost available after initial delay (3 seconds)
     this.boostCooldown = 3;
@@ -151,6 +163,27 @@ class RacingScene extends Phaser.Scene {
 
     // ========== COUNTDOWN START SEQUENCE ==========
     this.initCountdown();
+  }
+
+  /**
+   * Updates the actual game speed based on the current display speed.
+   * This links the cosmetic km/h display to real car movement.
+   *
+   * Formula: speedMultiplier = currentDisplaySpeed / referenceDisplaySpeed
+   * At 100 km/h → 1.0x speed
+   * At 175 km/h → 1.75x speed
+   * At 200 km/h → 2.0x speed
+   */
+  updateActualSpeedFromDisplay() {
+    const speedMultiplier = this.currentDisplaySpeed / this.referenceDisplaySpeed;
+
+    // Update max speed based on display speed
+    // Base: 12 units at 100 km/h display
+    this.maxSpeed = 12 * this.baseSpeedUnit * speedMultiplier;
+
+    // Also scale acceleration and deceleration for responsive feel
+    this.accel = 6 * this.baseSpeedUnit * speedMultiplier;
+    this.decel = 10 * this.baseSpeedUnit * speedMultiplier;
   }
 
   initCountdown() {
@@ -536,9 +569,9 @@ class RacingScene extends Phaser.Scene {
       targetSpeed *= (roadData.baseSpeed || 1.0);
     }
 
-    // Boost - temporary speed increase
+    // Boost - temporary speed increase (uses config multiplier)
     if (this.boosting) {
-      targetSpeed *= 1.5;
+      targetSpeed *= this.boostMultiplier;
       this.boostTimer -= dt;
       if (this.boostTimer <= 0) {
         this.boosting = false;
@@ -620,12 +653,16 @@ class RacingScene extends Phaser.Scene {
           this.currentDisplaySpeed + (kmGained * this.speedIncreasePerKm)
         );
         this.lastKmMilestone = currentKm;
+
+        // ========== UPDATE ACTUAL SPEED TO MATCH DISPLAY ==========
+        // This makes the car actually go faster as display speed increases!
+        this.updateActualSpeedFromDisplay();
       }
 
-      // Calculate display speed (base + boost if active)
+      // Calculate display speed (base * boost multiplier if active)
       let displaySpeed = this.currentDisplaySpeed;
       if (this.boosting) {
-        displaySpeed = Math.min(this.maxDisplaySpeed, displaySpeed + this.boostSpeedAmount);
+        displaySpeed = Math.floor(displaySpeed * this.boostMultiplier);
       }
       // Reduce display speed if hit
       if (this.isHit) {
