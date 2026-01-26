@@ -10,7 +10,8 @@ import {
   NOTIFICATION_CONFIG,
   getRandomCloudMessage,
   getRandomTip,
-  getRandomAnnouncement
+  getRandomAnnouncement,
+  getGantrySignContent
 } from '../../data/notificationData';
 
 /**
@@ -367,6 +368,9 @@ class RacingScene extends Phaser.Scene {
 
     // Place static obstacles (holes and barricades)
     this.placeObstacles();
+
+    // Place overhead gantry signs
+    this.placeGantrySigns();
   }
 
   placeObstacles() {
@@ -415,6 +419,37 @@ class RacingScene extends Phaser.Scene {
 
     // Sort by z position for proper rendering
     this.obstacles.sort((a, b) => a.z - b.z);
+  }
+
+  placeGantrySigns() {
+    this.gantrySigns = [];
+
+    if (!NOTIFICATION_CONFIG.gantry.enabled) return;
+
+    const numSigns = NOTIFICATION_CONFIG.gantry.signsPerSegment; // 3 signs per segment
+
+    // Spread signs evenly from 15% to 85% of track
+    const startZ = this.trackLength * 0.15;
+    const endZ = this.trackLength * 0.85;
+    const zRange = endZ - startZ;
+    const spacing = zRange / (numSigns - 1);
+
+    for (let i = 0; i < numSigns; i++) {
+      const z = startZ + i * spacing;
+
+      // Calculate remaining distance at this sign position
+      const progressAtSign = z / this.trackLength;
+      const remainingKm = this.segmentDistanceKm * (1 - progressAtSign);
+
+      // Get sign content (alternates between destination and event)
+      const content = getGantrySignContent(i, this.segmentDistanceKm, remainingKm);
+
+      this.gantrySigns.push({
+        z: z,
+        content: content,
+        index: i,
+      });
+    }
   }
 
   update(time, delta) {
@@ -743,11 +778,16 @@ class RacingScene extends Phaser.Scene {
     // Draw obstacles (holes, barricades) - behind traffic
     this.drawObstacles(lines);
 
+    // Reset all notification/sign text visibility BEFORE drawing them
+    this.hideNotificationTexts();
+
+    // Draw overhead gantry signs (highway signs spanning the road)
+    this.drawGantrySigns(lines);
+
     // Draw traffic cars
     this.drawTraffic(lines);
 
     // Draw notifications (billboards on grass, banners overhead)
-    this.hideNotificationTexts(); // Reset visibility
     this.drawBillboardNotification(lines);
     this.drawBannerNotification(lines);
 
@@ -981,6 +1021,236 @@ class RacingScene extends Phaser.Scene {
       } else if (obstacle.type === 'barricade') {
         this.drawBarricade(screenX, screenY, scale, obstacle.side);
       }
+    }
+  }
+
+  drawGantrySigns(lines) {
+    if (!this.gantrySigns || !NOTIFICATION_CONFIG.gantry.enabled) return;
+
+    for (const sign of this.gantrySigns) {
+      let dz = sign.z - this.playerZ;
+      if (dz < 0) dz += this.trackLength;
+
+      // Only draw if in view (and not too close - gantry is overhead)
+      if (dz <= 0 || dz > this.drawDistance * this.segmentLength) continue;
+
+      // Find matching road line for perspective
+      const signSegDist = dz / this.segmentLength;
+      let line = null;
+      for (const l of lines) {
+        const lDist = l.camDist / this.segmentLength;
+        if (Math.abs(lDist - signSegDist) < 1) {
+          line = l;
+          break;
+        }
+      }
+
+      if (!line) continue;
+
+      const screenX = line.x; // Center of road
+      const screenY = line.y;
+      const scale = line.scale;
+      const roadW = line.w;
+
+      // Draw the gantry sign based on content type
+      if (sign.content.type === 'destination') {
+        this.drawDestinationGantry(screenX, screenY, scale, roadW, sign.content);
+      } else {
+        this.drawEventGantry(screenX, screenY, scale, roadW, sign.content);
+      }
+    }
+  }
+
+  drawDestinationGantry(x, y, scale, roadW, content) {
+    // Blue highway-style destination sign
+    // y = road position, we build UPWARD from there
+
+    // Size calculations - ALL based on scale for consistency
+    const poleH = Math.max(50, scale * 4000);   // Height of poles (from road up)
+    const poleW = Math.max(4, scale * 100);     // Width of poles
+    const boardW = Math.max(100, scale * 3500); // Board width - SCALE BASED, not roadW!
+    const boardH = Math.max(50, scale * 2000);  // Board height - 2X for better visibility
+
+    if (boardW < 50) return; // Too small to render
+
+    // Calculate positions
+    const boardBottomY = y - poleH;             // Bottom of board (top of poles)
+    const boardTopY = boardBottomY - boardH;    // Top of board
+
+    // Poles at edges of BOARD (not road) - consistent with board width
+    const leftPoleX = x - boardW / 2 - poleW;
+    const rightPoleX = x + boardW / 2;
+
+    // Draw support poles (gray metal) - from road UP to board
+    this.spriteGraphics.fillStyle(0x888888, 1);
+    this.spriteGraphics.fillRect(leftPoleX, boardBottomY, poleW, poleH);
+    this.spriteGraphics.fillRect(rightPoleX, boardBottomY, poleW, poleH);
+
+    // Horizontal beam at top of poles (under the board)
+    this.spriteGraphics.fillStyle(0x666666, 1);
+    const beamH = Math.max(4, poleW * 0.8);
+    this.spriteGraphics.fillRect(leftPoleX, boardBottomY - beamH, boardW + poleW * 2, beamH);
+
+    // Main sign board (blue background)
+    this.spriteGraphics.fillStyle(0x0055AA, 1);
+    this.spriteGraphics.fillRoundedRect(
+      x - boardW / 2,
+      boardTopY,
+      boardW,
+      boardH,
+      Math.max(3, boardW * 0.02)
+    );
+
+    // White border
+    const borderW = Math.max(2, boardW * 0.015);
+    this.spriteGraphics.lineStyle(borderW, 0xFFFFFF, 1);
+    this.spriteGraphics.strokeRoundedRect(
+      x - boardW / 2 + borderW,
+      boardTopY + borderW,
+      boardW - borderW * 2,
+      boardH - borderW * 2,
+      Math.max(2, boardW * 0.02)
+    );
+
+    // Draw dual destination text (primary straight, secondary left/right)
+    // Upper row: Primary destination with ↑
+    const upperY = boardTopY + boardH * 0.35;
+    this.drawGantryText(
+      x,
+      upperY,
+      `${content.primary}  ↑`,
+      boardW,
+      boardH * 0.45,
+      'destination'
+    );
+
+    // Lower row: Secondary destination with ← or →
+    const lowerY = boardTopY + boardH * 0.72;
+    const arrow = content.secondaryDir === 'left' ? '←' : '→';
+    this.drawGantryText(
+      x,
+      lowerY,
+      `${content.secondary}  ${arrow}`,
+      boardW,
+      boardH * 0.45,
+      'destination-secondary'
+    );
+  }
+
+  drawEventGantry(x, y, scale, roadW, content) {
+    // Now using blue highway style (same as destination) for better text readability
+    // Green background for event/sponsor messages to differentiate from destination signs
+
+    // Size calculations - ALL based on scale for consistency
+    const poleH = Math.max(50, scale * 4000);
+    const poleW = Math.max(4, scale * 100);
+    const boardW = Math.max(100, scale * 3500);
+    const boardH = Math.max(50, scale * 1800);  // 2X height for better visibility
+
+    if (boardW < 50) return;
+
+    const boardBottomY = y - poleH;
+    const boardTopY = boardBottomY - boardH;
+
+    // Poles at edges of BOARD
+    const leftPoleX = x - boardW / 2 - poleW;
+    const rightPoleX = x + boardW / 2;
+
+    // Draw support poles (gray metal)
+    this.spriteGraphics.fillStyle(0x888888, 1);
+    this.spriteGraphics.fillRect(leftPoleX, boardBottomY, poleW, poleH);
+    this.spriteGraphics.fillRect(rightPoleX, boardBottomY, poleW, poleH);
+
+    // Horizontal beam at top of poles (under the board)
+    this.spriteGraphics.fillStyle(0x666666, 1);
+    const beamH = Math.max(4, poleW * 0.8);
+    this.spriteGraphics.fillRect(leftPoleX, boardBottomY - beamH, boardW + poleW * 2, beamH);
+
+    // Main sign board (green background for events - like highway info signs)
+    const bgColor = content.messageType === 'sponsor' ? 0x006644 : 0x007744;
+    this.spriteGraphics.fillStyle(bgColor, 1);
+    this.spriteGraphics.fillRoundedRect(
+      x - boardW / 2,
+      boardTopY,
+      boardW,
+      boardH,
+      Math.max(3, boardW * 0.02)
+    );
+
+    // White border (same as destination signs)
+    const borderW = Math.max(2, boardW * 0.015);
+    this.spriteGraphics.lineStyle(borderW, 0xFFFFFF, 1);
+    this.spriteGraphics.strokeRoundedRect(
+      x - boardW / 2 + borderW,
+      boardTopY + borderW,
+      boardW - borderW * 2,
+      boardH - borderW * 2,
+      Math.max(2, boardW * 0.02)
+    );
+
+    // Draw text centered on sign
+    const textY = boardTopY + boardH / 2;
+    this.drawGantryText(
+      x,
+      textY,
+      content.text,
+      boardW,
+      boardH,
+      'event'
+    );
+  }
+
+  drawGantryText(x, y, text, boardW, boardH, type) {
+    // Create or reuse text objects for gantry signs
+    if (!this.gantryTexts) {
+      this.gantryTexts = [];
+    }
+
+    // Only show text if board is large enough to read
+    if (boardW < 80 || boardH < 20) return;
+
+    let textObj = this.gantryTexts.find(t => !t.visible);
+    if (!textObj) {
+      textObj = this.add.text(0, 0, '', {
+        fontSize: '16px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#FFFFFF',
+        align: 'center',
+      });
+      textObj.setOrigin(0.5);
+      textObj.setDepth(95);
+      this.gantryTexts.push(textObj);
+    }
+
+    // Style based on type - all use white text now for readability
+    if (type === 'destination') {
+      // Primary destination - larger, bold white
+      textObj.setColor('#FFFFFF');
+      textObj.setStroke('#002244', 2);
+    } else if (type === 'destination-secondary') {
+      // Secondary destination - slightly yellow tint
+      textObj.setColor('#FFFF99');
+      textObj.setStroke('#002244', 2);
+    } else {
+      // Event/sponsor messages - white on green background
+      textObj.setColor('#FFFFFF');
+      textObj.setStroke('#004422', 2);
+    }
+
+    // Calculate font size based on board height (larger for 2X boards)
+    const fontSize = Math.max(14, Math.min(40, boardH * 0.5));
+    textObj.setFontSize(fontSize);
+    textObj.setPosition(x, y);
+    textObj.setText(text);
+    textObj.setVisible(true);
+
+    // Scale text to fit within board width (90% of board)
+    const maxTextWidth = boardW * 0.85;
+    const naturalWidth = textObj.width;
+    if (naturalWidth > maxTextWidth) {
+      textObj.setScale(maxTextWidth / naturalWidth);
+    } else {
+      textObj.setScale(1);
     }
   }
 
@@ -1508,6 +1778,13 @@ class RacingScene extends Phaser.Scene {
     // Hide all hole warning texts (will be shown again in drawHole if needed)
     if (this.holeWarningTexts) {
       for (const text of this.holeWarningTexts) {
+        text.setVisible(false);
+      }
+    }
+
+    // Hide all gantry sign texts (will be shown again in drawGantrySign if needed)
+    if (this.gantryTexts) {
+      for (const text of this.gantryTexts) {
         text.setVisible(false);
       }
     }

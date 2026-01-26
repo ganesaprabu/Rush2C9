@@ -1,0 +1,23 @@
+{
+  "destinations": [
+    { "primary": "Berlin Arena", "secondary": "Hamburg", "secondaryDir": "left" },
+    { "primary": "LCS Finals", "secondary": "LA Downtown", "secondaryDir": "right" },
+    { "primary": "Seoul LoL Park", "secondary": "Busan", "secondaryDir": "left" },
+    { "primary": "Shanghai Arena", "secondary": "Beijing", "secondaryDir": "right" },
+    { "primary": "Chicago Center", "secondary": "Detroit", "secondaryDir": "left" },
+    { "primary": "Cloud9 HQ", "secondary": "Santa Monica", "secondaryDir": "right" },
+    { "primary": "LEC Studio", "secondary": "Munich", "secondaryDir": "left" },
+    { "primary": "Worlds 2026", "secondary": "Stadium Exit", "secondaryDir": "right" }
+  ],
+  "messages": [
+    { "text": "LCS Match at 4 PM!", "type": "event" },
+    { "text": "C9 vs Liquid LIVE", "type": "event" },
+    { "text": "Sky's the Limit!", "type": "welcome" },
+    { "text": "Powered by JetBrains", "type": "sponsor" },
+    { "text": "Visit Cloud9 Booth", "type": "event" },
+    { "text": "Code Smart Race Fast", "type": "slogan" },
+    { "text": "IntelliJ IDEA", "type": "sponsor" },
+    { "text": "Go Cloud9!", "type": "event" },
+    { "text": "PyCharm Pro", "type": "sponsor" }
+  ]
+}

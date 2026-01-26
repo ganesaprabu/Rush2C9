@@ -1,6 +1,9 @@
 // Rush2C9 Notification System
 // Sky clouds (branding messages) and Billboards (tips/announcements) - for later
 
+// Import gantry sign config from JSON (organizer-editable)
+import gantryConfig from './gantryConfig.json';
+
 // ============================================================================
 // NOTIFICATION CONFIGURATION
 // ============================================================================
@@ -25,6 +28,12 @@ export const NOTIFICATION_CONFIG = {
     enabled: false,           // Will implement later
     displayDuration: 3000,
     interval: 20000,
+  },
+
+  // Overhead Gantry Sign Boards (highway-style overhead signs)
+  gantry: {
+    enabled: true,
+    signsPerSegment: 3,       // 3 signs per 5km segment (~1.7km apart)
   },
 };
 
@@ -97,6 +106,45 @@ export const ORGANIZER_ANNOUNCEMENTS = [
   { id: 3, text: "Visit Cloud9 booth for exclusive swag!", icon: "☁️", priority: "normal" },
   { id: 4, text: "Top 3 projects win amazing prizes!", icon: "🏆", priority: "normal" },
 ];
+
+// ============================================================================
+// GANTRY SIGN MESSAGES - Loaded from gantryConfig.json
+// ============================================================================
+// To edit messages: modify src/data/gantryConfig.json
+// Future: Organizer portal will update this JSON via API
+//
+// Destination signs (blue) - show 2 locations with arrows
+// Message signs (green) - event/sponsor messages (MAX 25 chars for readability)
+
+export const GANTRY_DESTINATIONS = gantryConfig.destinations;
+export const GANTRY_EVENT_MESSAGES = gantryConfig.messages;
+
+// Get gantry sign content for a specific position
+// Returns { type: 'destination' | 'event', content: {...} }
+export const getGantrySignContent = (signIndex, totalDistance, remainingKm) => {
+  // Alternate between destination signs and event messages
+  // First sign = destination, second = event, third = destination, etc.
+  if (signIndex % 2 === 0) {
+    // Destination sign - shows 2 locations with arrows
+    const destIndex = Math.floor(signIndex / 2) % GANTRY_DESTINATIONS.length;
+    const dest = GANTRY_DESTINATIONS[destIndex];
+    return {
+      type: 'destination',
+      primary: dest.primary,
+      secondary: dest.secondary,
+      secondaryDir: dest.secondaryDir,
+    };
+  } else {
+    // Event message (green sign)
+    const eventIndex = Math.floor(signIndex / 2) % GANTRY_EVENT_MESSAGES.length;
+    const event = GANTRY_EVENT_MESSAGES[eventIndex];
+    return {
+      type: 'event',
+      text: event.text,
+      messageType: event.type,
+    };
+  }
+};
 
 // ============================================================================
 // HELPER FUNCTIONS
