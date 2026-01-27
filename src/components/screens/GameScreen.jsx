@@ -453,59 +453,108 @@ function GameScreen() {
             </div>
           </div>
 
-          {/* Choose Your Path */}
+          {/* Choose Your Path - Dynamic based on completed segment */}
           <div className="mb-6">
             <p className="text-center font-semibold mb-4 text-lg">Choose Your Path</p>
 
-            {/* Option 1: Continue to Segment 2 (Truck) - FREE */}
-            <button
-              onClick={handleContinueRacing}
-              className="w-full mb-6 p-4 bg-gradient-to-r from-blue-900/50 to-blue-800/50 hover:from-blue-800/50 hover:to-blue-700/50 rounded-xl border border-blue-600/50 transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">🚛</span>
-                  <div className="text-left">
-                    <p className="font-bold">Segment 2 - Truck</p>
-                    <p className="text-sm text-gray-400">200 km/h • 7 km</p>
+            {/* After Segment 1: Show Segment 2 and Skip to Segment 3 */}
+            {currentSegment === 0 && (
+              <>
+                {/* Option 1: Continue to Segment 2 (Truck) - FREE */}
+                <button
+                  onClick={handleContinueRacing}
+                  className="w-full mb-6 p-4 bg-gradient-to-r from-blue-900/50 to-blue-800/50 hover:from-blue-800/50 hover:to-blue-700/50 rounded-xl border border-blue-600/50 transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">🚛</span>
+                      <div className="text-left">
+                        <p className="font-bold">Segment 2 - Truck</p>
+                        <p className="text-sm text-gray-400">200 km/h • 7 km</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400 font-bold text-lg">FREE</span>
+                      <span className="text-green-400 text-xl">→</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-400 font-bold text-lg">FREE</span>
-                  <span className="text-green-400 text-xl">→</span>
-                </div>
-              </div>
-            </button>
+                </button>
 
-            {/* Option 2: Skip to Segment 3 (Race Car) - 100 credits */}
-            <button
-              onClick={handleSkipToSegment3}
-              disabled={credits < GAME_CONFIG.skipSegmentCost}
-              className={`w-full p-4 rounded-xl border transition-all ${
-                credits >= GAME_CONFIG.skipSegmentCost
-                  ? 'bg-gradient-to-r from-purple-900/50 to-pink-900/50 hover:from-purple-800/50 hover:to-pink-800/50 border-purple-600/50 hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle'
-                  : 'bg-gray-900/50 border-gray-700/50 opacity-50 cursor-not-allowed'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">🏎️</span>
-                  <div className="text-left">
-                    <p className="font-bold">Skip to Segment 3 - Race Car</p>
-                    <p className="text-sm text-gray-400">225 km/h • 9 km</p>
+                {/* Option 2: Skip to Segment 3 (Race Car) - 100 credits */}
+                <button
+                  onClick={handleSkipToSegment3}
+                  disabled={credits < GAME_CONFIG.skipSegmentCost}
+                  className={`w-full p-4 rounded-xl border transition-all ${
+                    credits >= GAME_CONFIG.skipSegmentCost
+                      ? 'bg-gradient-to-r from-purple-900/50 to-pink-900/50 hover:from-purple-800/50 hover:to-pink-800/50 border-purple-600/50 hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle'
+                      : 'bg-gray-900/50 border-gray-700/50 opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">🏎️</span>
+                      <div className="text-left">
+                        <p className="font-bold">Skip to Segment 3 - Race Car</p>
+                        <p className="text-sm text-gray-400">225 km/h • 9 km</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-bold text-lg ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>
+                        -{GAME_CONFIG.skipSegmentCost} 💳
+                      </span>
+                      <span className={`text-xl ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>→</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`font-bold text-lg ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>
-                    -{GAME_CONFIG.skipSegmentCost} 💳
-                  </span>
-                  <span className={`text-xl ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>→</span>
-                </div>
-              </div>
-              {credits < GAME_CONFIG.skipSegmentCost && (
-                <p className="text-xs text-red-400 mt-2 text-center">Not enough credits</p>
-              )}
-            </button>
+                  {credits < GAME_CONFIG.skipSegmentCost && (
+                    <p className="text-xs text-red-400 mt-2 text-center">Not enough credits</p>
+                  )}
+                </button>
+              </>
+            )}
+
+            {/* After Segment 2: Show Segment 3 and End Game */}
+            {currentSegment === 1 && (
+              <>
+                {/* Option 1: Continue to Segment 3 (Race Car) - FREE */}
+                <button
+                  onClick={handleContinueRacing}
+                  className="w-full mb-6 p-4 bg-gradient-to-r from-blue-900/50 to-blue-800/50 hover:from-blue-800/50 hover:to-blue-700/50 rounded-xl border border-blue-600/50 transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">🏎️</span>
+                      <div className="text-left">
+                        <p className="font-bold">Segment 3 - Race Car</p>
+                        <p className="text-sm text-gray-400">225 km/h • 9 km</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400 font-bold text-lg">FREE</span>
+                      <span className="text-green-400 text-xl">→</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Option 2: End Game & View Results */}
+                <button
+                  onClick={() => setGameState('results')}
+                  className="w-full p-4 bg-gradient-to-r from-gray-800/50 to-gray-700/50 hover:from-gray-700/50 hover:to-gray-600/50 rounded-xl border border-gray-600/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">🏁</span>
+                      <div className="text-left">
+                        <p className="font-bold">End Game</p>
+                        <p className="text-sm text-gray-400">View final results</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-300 text-xl">→</span>
+                    </div>
+                  </div>
+                </button>
+              </>
+            )}
           </div>
 
           {/* Animation styles */}

@@ -321,6 +321,19 @@ export const SEGMENT_CONFIG = {
 
   // Maximum speed cap (km/h)
   maxSpeed: 250,
+
+  // Vehicle for each segment
+  vehicles: ['car', 'truck', 'sports_car'],
+
+  // Obstacle types for each segment (progressively harder)
+  obstacles: [
+    ['hole', 'barricade'],           // Segment 1: Basic obstacles
+    ['oil_barrel', 'broken_crate', 'construction_barrier'],  // Segment 2: Medium difficulty
+    ['tire_stack', 'cone_cluster'],  // Segment 3: Hard (to be implemented)
+  ],
+
+  // Traffic speed multiplier for each segment (higher = faster traffic)
+  trafficSpeed: [0.3, 0.5, 0.7],
 };
 
 export const BOOST_CONFIG = {
@@ -531,8 +544,8 @@ export const generateRouteSegments = (startCityId, difficulty = 'moderate') => {
   const waypoints = city.waypoints.slice(0, 3);
 
   return waypoints.map((waypoint, index) => {
-    // Determine road type based on difficulty distribution
-    const roadType = selectRoadType(diff.roadDistribution);
+    // All segments use highway for consistent experience
+    const roadType = 'highway';
     const distance = Math.floor(city.baseDistance / 3 * (0.8 + Math.random() * 0.4));
 
     return {

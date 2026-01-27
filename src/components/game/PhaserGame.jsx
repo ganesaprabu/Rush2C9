@@ -44,8 +44,14 @@ const PhaserGame = forwardRef(function PhaserGame({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create the scene instance with callbacks (use refs for stable references)
+    // Create the scene instance with config and callbacks (use refs for stable references)
     const racingScene = new RacingScene({
+      // Initial config values
+      vehicleId,
+      roadType,
+      credits,
+      segmentIndex,
+      // Callbacks
       onProgress: (progress) => callbacksRef.current.onProgress?.(progress),
       onStats: (stats) => callbacksRef.current.onStats?.(stats),
       onObstacleHit: () => callbacksRef.current.onObstacleHit?.(),
@@ -98,7 +104,7 @@ const PhaserGame = forwardRef(function PhaserGame({
         gameRef.current = null;
       }
     };
-  }, []); // Only run once on mount
+  }, [segmentIndex, vehicleId, roadType, credits]); // Recreate game when segment or config changes
 
   // Update vehicle when it changes
   useEffect(() => {

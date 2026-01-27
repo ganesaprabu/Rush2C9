@@ -19,20 +19,20 @@ import {
  * Clean rendering approach that actually works
  */
 class RacingScene extends Phaser.Scene {
-  constructor(callbacks = {}) {
+  constructor(config = {}) {
     super({ key: 'RacingScene' });
 
-    this.onProgress = callbacks.onProgress || (() => {});
-    this.onObstacleHit = callbacks.onObstacleHit || (() => {});
-    this.onBoostUsed = callbacks.onBoostUsed || (() => {});
-    this.onComplete = callbacks.onComplete || (() => {});
-    this.onStats = callbacks.onStats || (() => {}); // For speed & distance updates
-    this.onBoostReady = callbacks.onBoostReady || (() => {}); // For boost availability
+    this.onProgress = config.onProgress || (() => {});
+    this.onObstacleHit = config.onObstacleHit || (() => {});
+    this.onBoostUsed = config.onBoostUsed || (() => {});
+    this.onComplete = config.onComplete || (() => {});
+    this.onStats = config.onStats || (() => {}); // For speed & distance updates
+    this.onBoostReady = config.onBoostReady || (() => {}); // For boost availability
 
-    this.vehicleId = 'car';
-    this.roadType = 'highway';
-    this.credits = 200;
-    this.segmentIndex = 0; // 0-based segment index (0, 1, 2)
+    this.vehicleId = config.vehicleId || 'car';
+    this.roadType = config.roadType || 'highway';
+    this.credits = config.credits || 200;
+    this.segmentIndex = config.segmentIndex || 0; // 0-based segment index (0, 1, 2)
   }
 
   create() {
@@ -56,10 +56,14 @@ class RacingScene extends Phaser.Scene {
     // Reference speed (100 km/h = baseline)
     this.referenceDisplaySpeed = 100;
 
+    // Speed feel multiplier - higher = faster visual movement
+    // Increased from 12 to 18 for better speed perception at higher speeds
+    this.speedFeelMultiplier = 18;
+
     // These will be recalculated based on currentDisplaySpeed
-    this.maxSpeed = 12 * this.baseSpeedUnit;  // Will be updated dynamically
-    this.accel = 6 * this.baseSpeedUnit;
-    this.decel = 10 * this.baseSpeedUnit;
+    this.maxSpeed = this.speedFeelMultiplier * this.baseSpeedUnit;  // Will be updated dynamically
+    this.accel = 8 * this.baseSpeedUnit;   // Faster acceleration
+    this.decel = 12 * this.baseSpeedUnit;  // Faster deceleration
     this.centrifugal = 0.3;
 
     // Player
@@ -182,12 +186,12 @@ class RacingScene extends Phaser.Scene {
     const speedMultiplier = this.currentDisplaySpeed / this.referenceDisplaySpeed;
 
     // Update max speed based on display speed
-    // Base: 12 units at 100 km/h display
-    this.maxSpeed = 12 * this.baseSpeedUnit * speedMultiplier;
+    // Uses speedFeelMultiplier for better visual speed perception
+    this.maxSpeed = this.speedFeelMultiplier * this.baseSpeedUnit * speedMultiplier;
 
     // Also scale acceleration and deceleration for responsive feel
-    this.accel = 6 * this.baseSpeedUnit * speedMultiplier;
-    this.decel = 10 * this.baseSpeedUnit * speedMultiplier;
+    this.accel = 8 * this.baseSpeedUnit * speedMultiplier;
+    this.decel = 12 * this.baseSpeedUnit * speedMultiplier;
   }
 
   initCountdown() {
@@ -381,13 +385,18 @@ class RacingScene extends Phaser.Scene {
       let carSpeed;
       let laneX;
 
+      // Traffic speed multiplier based on segment (higher segments = faster traffic)
+      const trafficMultiplier = SEGMENT_CONFIG.trafficSpeed[this.segmentIndex] || 0.3;
+
       if (goingOpposite) {
         // Oncoming traffic - randomized speed and position within lane
-        carSpeed = -this.maxSpeed * (0.20 + Math.random() * 0.15); // 20-35% speed
+        // Base: 20-35% speed, scaled by segment multiplier
+        carSpeed = -this.maxSpeed * (0.20 + Math.random() * 0.15) * (1 + trafficMultiplier);
         laneX = currentSide * (0.45 + Math.random() * 0.2); // 0.45-0.65 range
       } else {
         // Same direction traffic - randomized speed and position
-        carSpeed = this.maxSpeed * (0.05 + Math.random() * 0.08); // 5-13% speed
+        // Base: 5-13% speed, scaled by segment multiplier
+        carSpeed = this.maxSpeed * (0.05 + Math.random() * 0.08) * (1 + trafficMultiplier);
         laneX = currentSide * (0.4 + Math.random() * 0.25); // 0.4-0.65 range
       }
 
@@ -437,8 +446,8 @@ class RacingScene extends Phaser.Scene {
     const zRange = endZ - startZ;
     const spacing = zRange / totalObstacles;
 
-    // Obstacle types pool (only types that have rendering functions!)
-    const obstacleTypes = ['hole', 'barricade'];
+    // Obstacle types pool - based on segment index from config
+    const obstacleTypes = SEGMENT_CONFIG.obstacles[this.segmentIndex] || ['hole', 'barricade'];
 
     for (let i = 0; i < totalObstacles; i++) {
       // Strictly alternate sides for fair zig-zag gameplay
@@ -1179,6 +1188,20 @@ class RacingScene extends Phaser.Scene {
         this.drawHole(screenX, screenY, scale, obstacle.side);
       } else if (obstacle.type === 'barricade') {
         this.drawBarricade(screenX, screenY, scale, obstacle.side);
+      } else if (obstacle.type === 'hole_large') {
+        this.drawHoleLarge(screenX, screenY, scale, obstacle.side);
+      } else if (obstacle.type === 'oil_barrel') {
+        this.drawOilBarrel(screenX, screenY, scale, obstacle.side);
+      } else if (obstacle.type === 'debris') {
+        this.drawDebris(screenX, screenY, scale, obstacle.side);
+      } else if (obstacle.type === 'tire_stack') {
+        this.drawTireStack(screenX, screenY, scale, obstacle.side);
+      } else if (obstacle.type === 'cone_cluster') {
+        this.drawConeCluster(screenX, screenY, scale, obstacle.side);
+      } else if (obstacle.type === 'broken_crate') {
+        this.drawBrokenCrate(screenX, screenY, scale, obstacle.side);
+      } else if (obstacle.type === 'construction_barrier') {
+        this.drawConstructionBarrier(screenX, screenY, scale, obstacle.side);
       }
     }
   }
@@ -1414,9 +1437,9 @@ class RacingScene extends Phaser.Scene {
   }
 
   drawHole(x, y, scale, side) {
-    // Large pothole/crater blocking one lane - MUCH LARGER
-    const holeW = Math.max(25, scale * 1200);  // Even wider for visibility
-    const holeH = Math.max(12, scale * 450);   // Taller too
+    // Pothole - sized to stay within one lane (not crossing center)
+    const holeW = Math.max(20, scale * 800);   // Reduced from 1200 to stay in lane
+    const holeH = Math.max(10, scale * 300);   // Reduced height proportionally
 
     if (holeW < 10) return;
 
@@ -1580,6 +1603,343 @@ class RacingScene extends Phaser.Scene {
     }
   }
 
+  // ========== SEGMENT 2 OBSTACLES ==========
+
+  drawHoleLarge(x, y, scale, side) {
+    // Larger pothole for Segment 2 - 1.5x bigger than regular hole
+    const holeW = Math.max(35, scale * 1800);  // 1.5x wider
+    const holeH = Math.max(18, scale * 675);   // 1.5x taller
+
+    if (holeW < 12) return;
+
+    // Danger zone outer ring (red/orange warning) - more intense
+    this.roadGraphics.fillStyle(0xFF2200, 0.5);
+    this.roadGraphics.fillEllipse(x, y, holeW * 1.6, holeH * 1.6);
+
+    // Cracked road around hole
+    this.roadGraphics.fillStyle(0x444444, 0.9);
+    this.roadGraphics.fillEllipse(x, y, holeW * 1.4, holeH * 1.4);
+
+    // Outer dark ring
+    this.roadGraphics.fillStyle(0x222222, 1);
+    this.roadGraphics.fillEllipse(x, y, holeW * 1.15, holeH * 1.15);
+
+    // Main hole
+    this.roadGraphics.fillStyle(0x111111, 1);
+    this.roadGraphics.fillEllipse(x, y, holeW, holeH);
+
+    // Inner depth effect
+    this.roadGraphics.fillStyle(0x000000, 1);
+    this.roadGraphics.fillEllipse(x, y + holeH * 0.1, holeW * 0.7, holeH * 0.6);
+
+    // Warning marks - more prominent
+    if (holeW > 20) {
+      this.roadGraphics.fillStyle(0xFF0000, 1);
+      const stripeW = Math.max(6, holeW * 0.1);
+      this.roadGraphics.fillRect(x - holeW * 0.8, y - holeH * 0.4, stripeW, holeH * 0.8);
+      this.roadGraphics.fillRect(x + holeW * 0.7, y - holeH * 0.4, stripeW, holeH * 0.8);
+    }
+  }
+
+  drawOilBarrel(x, y, scale, side) {
+    // Oil barrel obstacle - cylinder shape
+    const barrelW = Math.max(20, scale * 800);
+    const barrelH = Math.max(25, scale * 1000);
+
+    if (barrelW < 10) return;
+
+    // Shadow
+    this.spriteGraphics.fillStyle(0x000000, 0.4);
+    this.spriteGraphics.fillEllipse(x + 3, y + 2, barrelW * 1.1, barrelH * 0.3);
+
+    // Barrel body (dark red/maroon)
+    this.spriteGraphics.fillStyle(0x8B0000, 1);
+    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH, barrelW, barrelH);
+
+    // Barrel top ellipse
+    this.spriteGraphics.fillStyle(0x660000, 1);
+    this.spriteGraphics.fillEllipse(x, y - barrelH, barrelW / 2, barrelH * 0.15);
+
+    // Barrel bottom ellipse
+    this.spriteGraphics.fillStyle(0x440000, 1);
+    this.spriteGraphics.fillEllipse(x, y, barrelW / 2, barrelH * 0.12);
+
+    // Metal bands (silver/gray stripes)
+    this.spriteGraphics.fillStyle(0x888888, 1);
+    const bandH = Math.max(2, barrelH * 0.08);
+    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH * 0.85, barrelW, bandH);
+    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH * 0.15, barrelW, bandH);
+
+    // Hazard symbol (yellow triangle with exclamation)
+    if (barrelW > 15) {
+      // Yellow warning triangle
+      this.spriteGraphics.fillStyle(0xFFCC00, 1);
+      const triSize = barrelW * 0.4;
+      this.spriteGraphics.fillTriangle(
+        x, y - barrelH * 0.7,
+        x - triSize, y - barrelH * 0.35,
+        x + triSize, y - barrelH * 0.35
+      );
+      // Black exclamation
+      this.spriteGraphics.fillStyle(0x000000, 1);
+      this.spriteGraphics.fillRect(x - barrelW * 0.05, y - barrelH * 0.6, barrelW * 0.1, barrelH * 0.15);
+      this.spriteGraphics.fillCircle(x, y - barrelH * 0.4, barrelW * 0.06);
+    }
+
+    // "OIL" text
+    if (barrelW > 25) {
+      this.spriteGraphics.fillStyle(0xFFFFFF, 1);
+      // Simple text representation
+    }
+  }
+
+  drawDebris(x, y, scale, side) {
+    // Scattered rocks/debris on road
+    const debrisW = Math.max(30, scale * 1200);
+    const debrisH = Math.max(15, scale * 500);
+
+    if (debrisW < 12) return;
+
+    // Draw several rocks of varying sizes
+    const rockColors = [0x666666, 0x555555, 0x777777, 0x888888];
+
+    // Large center rock
+    this.spriteGraphics.fillStyle(rockColors[0], 1);
+    this.spriteGraphics.fillEllipse(x, y - debrisH * 0.3, debrisW * 0.4, debrisH * 0.5);
+
+    // Shadow
+    this.spriteGraphics.fillStyle(0x333333, 0.5);
+    this.spriteGraphics.fillEllipse(x, y + debrisH * 0.1, debrisW * 0.5, debrisH * 0.2);
+
+    // Smaller rocks around
+    this.spriteGraphics.fillStyle(rockColors[1], 1);
+    this.spriteGraphics.fillEllipse(x - debrisW * 0.35, y - debrisH * 0.2, debrisW * 0.25, debrisH * 0.35);
+
+    this.spriteGraphics.fillStyle(rockColors[2], 1);
+    this.spriteGraphics.fillEllipse(x + debrisW * 0.3, y - debrisH * 0.15, debrisW * 0.2, debrisH * 0.3);
+
+    this.spriteGraphics.fillStyle(rockColors[3], 1);
+    this.spriteGraphics.fillEllipse(x - debrisW * 0.15, y - debrisH * 0.1, debrisW * 0.15, debrisH * 0.25);
+
+    // Small pebbles
+    this.spriteGraphics.fillStyle(0x999999, 1);
+    this.spriteGraphics.fillCircle(x + debrisW * 0.4, y, debrisW * 0.08);
+    this.spriteGraphics.fillCircle(x - debrisW * 0.45, y - debrisH * 0.05, debrisW * 0.06);
+    this.spriteGraphics.fillCircle(x + debrisW * 0.1, y + debrisH * 0.05, debrisW * 0.05);
+
+    // Dust/dirt effect
+    this.spriteGraphics.fillStyle(0xAA8866, 0.3);
+    this.spriteGraphics.fillEllipse(x, y, debrisW * 0.7, debrisH * 0.4);
+  }
+
+  // ========== SEGMENT 2 NEW OBSTACLES ==========
+
+  drawBrokenCrate(x, y, scale, side) {
+    // Broken wooden crate with debris
+    const crateW = Math.max(25, scale * 900);
+    const crateH = Math.max(20, scale * 700);
+
+    if (crateW < 12) return;
+
+    // Shadow
+    this.spriteGraphics.fillStyle(0x000000, 0.4);
+    this.spriteGraphics.fillEllipse(x + 3, y + 2, crateW * 0.8, crateH * 0.3);
+
+    // Main crate body (broken, tilted)
+    this.spriteGraphics.fillStyle(0x8B4513, 1); // Saddle brown
+    this.spriteGraphics.beginPath();
+    this.spriteGraphics.moveTo(x - crateW * 0.4, y);
+    this.spriteGraphics.lineTo(x - crateW * 0.35, y - crateH * 0.8);
+    this.spriteGraphics.lineTo(x + crateW * 0.3, y - crateH * 0.7);
+    this.spriteGraphics.lineTo(x + crateW * 0.4, y);
+    this.spriteGraphics.closePath();
+    this.spriteGraphics.fill();
+
+    // Crate planks (horizontal lines)
+    this.spriteGraphics.lineStyle(Math.max(1, scale * 30), 0x654321, 1);
+    this.spriteGraphics.strokeLineShape(new Phaser.Geom.Line(
+      x - crateW * 0.35, y - crateH * 0.2,
+      x + crateW * 0.35, y - crateH * 0.15
+    ));
+    this.spriteGraphics.strokeLineShape(new Phaser.Geom.Line(
+      x - crateW * 0.36, y - crateH * 0.5,
+      x + crateW * 0.32, y - crateH * 0.45
+    ));
+
+    // Broken plank sticking out
+    this.spriteGraphics.fillStyle(0xA0522D, 1);
+    this.spriteGraphics.beginPath();
+    this.spriteGraphics.moveTo(x + crateW * 0.2, y - crateH * 0.6);
+    this.spriteGraphics.lineTo(x + crateW * 0.55, y - crateH * 1.0);
+    this.spriteGraphics.lineTo(x + crateW * 0.5, y - crateH * 0.55);
+    this.spriteGraphics.closePath();
+    this.spriteGraphics.fill();
+
+    // Scattered wood pieces
+    this.spriteGraphics.fillStyle(0x8B4513, 0.8);
+    this.spriteGraphics.fillRect(x - crateW * 0.5, y - crateH * 0.1, crateW * 0.15, crateH * 0.08);
+    this.spriteGraphics.fillRect(x + crateW * 0.35, y - crateH * 0.05, crateW * 0.12, crateH * 0.06);
+
+    // Nail highlights
+    this.spriteGraphics.fillStyle(0x888888, 1);
+    this.spriteGraphics.fillCircle(x - crateW * 0.2, y - crateH * 0.3, crateW * 0.02);
+    this.spriteGraphics.fillCircle(x + crateW * 0.15, y - crateH * 0.25, crateW * 0.02);
+  }
+
+  drawConstructionBarrier(x, y, scale, side) {
+    // Orange/white striped construction barrier
+    const barrierW = Math.max(30, scale * 1100);
+    const barrierH = Math.max(20, scale * 700);
+
+    if (barrierW < 15) return;
+
+    // Shadow
+    this.spriteGraphics.fillStyle(0x000000, 0.4);
+    this.spriteGraphics.fillEllipse(x + 3, y + 2, barrierW * 0.9, barrierH * 0.25);
+
+    // Legs/stands
+    this.spriteGraphics.fillStyle(0x333333, 1);
+    this.spriteGraphics.fillRect(x - barrierW * 0.4, y - barrierH * 0.3, barrierW * 0.08, barrierH * 0.3);
+    this.spriteGraphics.fillRect(x + barrierW * 0.32, y - barrierH * 0.3, barrierW * 0.08, barrierH * 0.3);
+
+    // Main barrier board - orange base
+    this.spriteGraphics.fillStyle(0xFF6600, 1);
+    this.spriteGraphics.fillRect(x - barrierW * 0.45, y - barrierH * 0.7, barrierW * 0.9, barrierH * 0.4);
+
+    // White diagonal stripes
+    this.spriteGraphics.fillStyle(0xFFFFFF, 1);
+    const stripeWidth = barrierW * 0.12;
+    for (let i = 0; i < 5; i++) {
+      const sx = x - barrierW * 0.4 + i * stripeWidth * 2;
+      this.spriteGraphics.beginPath();
+      this.spriteGraphics.moveTo(sx, y - barrierH * 0.7);
+      this.spriteGraphics.lineTo(sx + stripeWidth, y - barrierH * 0.7);
+      this.spriteGraphics.lineTo(sx + stripeWidth * 1.5, y - barrierH * 0.3);
+      this.spriteGraphics.lineTo(sx + stripeWidth * 0.5, y - barrierH * 0.3);
+      this.spriteGraphics.closePath();
+      this.spriteGraphics.fill();
+    }
+
+    // Border outline
+    this.spriteGraphics.lineStyle(Math.max(1, scale * 20), 0xCC5500, 1);
+    this.spriteGraphics.strokeRect(x - barrierW * 0.45, y - barrierH * 0.7, barrierW * 0.9, barrierH * 0.4);
+
+    // Reflective dots on top
+    this.spriteGraphics.fillStyle(0xFFFF00, 0.8);
+    this.spriteGraphics.fillCircle(x - barrierW * 0.3, y - barrierH * 0.8, barrierW * 0.03);
+    this.spriteGraphics.fillCircle(x, y - barrierH * 0.8, barrierW * 0.03);
+    this.spriteGraphics.fillCircle(x + barrierW * 0.3, y - barrierH * 0.8, barrierW * 0.03);
+  }
+
+  // ========== SEGMENT 3 OBSTACLES (Placeholders) ==========
+
+  drawTireStack(x, y, scale, side) {
+    // Single large tire standing upright on the road (like race track barrier)
+    const tireSize = Math.max(30, scale * 1200);  // Diameter of tire
+
+    if (tireSize < 15) return;
+
+    // Shadow on ground
+    this.spriteGraphics.fillStyle(0x000000, 0.4);
+    this.spriteGraphics.fillEllipse(x + 3, y + 2, tireSize * 0.5, tireSize * 0.15);
+
+    // Tire outer ring (black rubber)
+    this.spriteGraphics.fillStyle(0x1a1a1a, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.5, tireSize * 0.5);
+
+    // Tire tread area (slightly lighter for depth)
+    this.spriteGraphics.fillStyle(0x2a2a2a, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.45, tireSize * 0.45);
+
+    // Tire sidewall (dark gray)
+    this.spriteGraphics.fillStyle(0x3a3a3a, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.38, tireSize * 0.38);
+
+    // Alloy wheel rim (silver/metallic)
+    this.spriteGraphics.fillStyle(0xAAAAAA, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.32, tireSize * 0.32);
+
+    // Wheel spokes effect (darker silver)
+    this.spriteGraphics.fillStyle(0x888888, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.28, tireSize * 0.28);
+
+    // Inner rim detail (lighter)
+    this.spriteGraphics.fillStyle(0xCCCCCC, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.2, tireSize * 0.2);
+
+    // Center hub (dark)
+    this.spriteGraphics.fillStyle(0x444444, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.1, tireSize * 0.1);
+
+    // Hub cap center (metallic shine)
+    this.spriteGraphics.fillStyle(0x999999, 1);
+    this.spriteGraphics.fillEllipse(x, y - tireSize * 0.5, tireSize * 0.05, tireSize * 0.05);
+
+    // Lug nuts (5 dots around center)
+    if (tireSize > 25) {
+      this.spriteGraphics.fillStyle(0x666666, 1);
+      const lugRadius = tireSize * 0.15;
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * 72 - 90) * Math.PI / 180;  // 5 lugs, starting from top
+        const lx = x + Math.cos(angle) * lugRadius;
+        const ly = (y - tireSize * 0.5) + Math.sin(angle) * lugRadius;
+        this.spriteGraphics.fillCircle(lx, ly, tireSize * 0.02);
+      }
+    }
+  }
+
+  drawConeCluster(x, y, scale, side) {
+    // Cluster of traffic cones
+    const coneW = Math.max(15, scale * 500);
+    const coneH = Math.max(25, scale * 800);
+
+    if (coneW < 8) return;
+
+    // Draw 3 cones in a cluster
+    const positions = [
+      { dx: 0, dy: 0 },
+      { dx: -coneW * 0.8, dy: coneH * 0.1 },
+      { dx: coneW * 0.7, dy: coneH * 0.15 }
+    ];
+
+    for (const pos of positions) {
+      const cx = x + pos.dx;
+      const cy = y + pos.dy;
+
+      // Cone shadow
+      this.spriteGraphics.fillStyle(0x000000, 0.3);
+      this.spriteGraphics.fillEllipse(cx + 1, cy + 1, coneW * 0.4, coneH * 0.1);
+
+      // Cone base (black)
+      this.spriteGraphics.fillStyle(0x222222, 1);
+      this.spriteGraphics.fillRect(cx - coneW * 0.4, cy - coneH * 0.1, coneW * 0.8, coneH * 0.1);
+
+      // Cone body (orange)
+      this.spriteGraphics.fillStyle(0xFF6600, 1);
+      this.spriteGraphics.fillTriangle(
+        cx, cy - coneH,
+        cx - coneW * 0.35, cy - coneH * 0.1,
+        cx + coneW * 0.35, cy - coneH * 0.1
+      );
+
+      // White reflective stripes
+      this.spriteGraphics.fillStyle(0xFFFFFF, 1);
+      const stripeH = coneH * 0.12;
+      // Upper stripe
+      this.spriteGraphics.fillTriangle(
+        cx, cy - coneH * 0.75,
+        cx - coneW * 0.18, cy - coneH * 0.6,
+        cx + coneW * 0.18, cy - coneH * 0.6
+      );
+      // Lower stripe
+      this.spriteGraphics.fillTriangle(
+        cx - coneW * 0.1, cy - coneH * 0.45,
+        cx - coneW * 0.28, cy - coneH * 0.3,
+        cx + coneW * 0.28, cy - coneH * 0.3
+      );
+    }
+  }
+
   drawPlayerCar() {
     // Car moves left/right based on playerX, road stays stable
     // playerX ranges from -3.0 to 3.0, map to screen position
@@ -1587,19 +1947,28 @@ class RacingScene extends Phaser.Scene {
     const playerScreenX = this.width / 2 + steerOffset;
     const playerScreenY = this.height - 140;  // Higher up to avoid control buttons
 
-    // Car dimensions - REAR VIEW (wider than tall, like looking at back of car)
+    // Get vehicle type based on segment
+    const segmentVehicle = SEGMENT_CONFIG.vehicles[this.segmentIndex] || 'car';
+
+    // Draw the appropriate vehicle
+    if (segmentVehicle === 'truck') {
+      this.drawPlayerTruck(playerScreenX, playerScreenY);
+    } else if (segmentVehicle === 'sports_car') {
+      this.drawPlayerSportsCar(playerScreenX, playerScreenY);
+    } else {
+      this.drawPlayerCarDefault(playerScreenX, playerScreenY);
+    }
+
+    // Draw boost indicator above vehicle when boost is ready
+    this.drawBoostIndicator(playerScreenX, playerScreenY - 100);
+  }
+
+  drawPlayerCarDefault(playerScreenX, playerScreenY) {
+    // Original car drawing code - REAR VIEW
     const carW = 90;
     const carH = 50;
 
-    // Colors
-    const vehicleColors = {
-      bike: 0x44AA44,
-      car: 0xDD3333,
-      tractor: 0xFFAA00,
-      truck: 0x4444AA,
-      sports_car: 0xFFFF00,
-    };
-    let bodyColor = vehicleColors[this.vehicleId] || 0xDD3333;
+    let bodyColor = 0xDD3333;  // Red car
 
     if (this.isHit && Math.floor(this.elapsedTime * 8) % 2 === 0) {
       bodyColor = 0xFFFFFF;
@@ -1697,9 +2066,252 @@ class RacingScene extends Phaser.Scene {
         playerScreenX + 16, playerScreenY + 20 + Math.random() * 10
       );
     }
+  }
 
-    // Draw boost indicator above car when boost is ready
-    this.drawBoostIndicator(playerScreenX, playerScreenY - carH - 40);
+  // ========== SEGMENT 2 VEHICLE: TRUCK ==========
+  drawPlayerTruck(playerScreenX, playerScreenY) {
+    // Truck - REAR VIEW - bigger and bulkier than car
+    const truckW = 110;
+    const truckH = 70;
+
+    let bodyColor = 0x2E86AB;  // Blue truck
+
+    if (this.isHit && Math.floor(this.elapsedTime * 8) % 2 === 0) {
+      bodyColor = 0xFFFFFF;
+    } else if (this.boosting) {
+      bodyColor = 0xFFFF00;
+    }
+
+    // Shadow under truck
+    this.spriteGraphics.fillStyle(0x000000, 0.3);
+    this.spriteGraphics.fillEllipse(playerScreenX, playerScreenY + 5, truckW * 1.1, 18);
+
+    // Main cargo body (large rectangle)
+    this.spriteGraphics.fillStyle(bodyColor, 1);
+    this.spriteGraphics.fillRoundedRect(
+      playerScreenX - truckW / 2,
+      playerScreenY - truckH,
+      truckW, truckH, 4
+    );
+
+    // Cargo area top edge (darker)
+    const darkColor = Phaser.Display.Color.ValueToColor(bodyColor);
+    darkColor.darken(20);
+    this.spriteGraphics.fillStyle(darkColor.color, 1);
+    this.spriteGraphics.fillRect(
+      playerScreenX - truckW / 2,
+      playerScreenY - truckH,
+      truckW, 8
+    );
+
+    // Rear door frame (vertical lines)
+    this.spriteGraphics.fillStyle(0x333333, 1);
+    this.spriteGraphics.fillRect(playerScreenX - truckW / 2 + 5, playerScreenY - truckH + 10, 3, truckH - 15);
+    this.spriteGraphics.fillRect(playerScreenX + truckW / 2 - 8, playerScreenY - truckH + 10, 3, truckH - 15);
+    this.spriteGraphics.fillRect(playerScreenX - 1.5, playerScreenY - truckH + 10, 3, truckH - 15);
+
+    // Rear door handle
+    this.spriteGraphics.fillStyle(0x666666, 1);
+    this.spriteGraphics.fillRect(playerScreenX - 15, playerScreenY - truckH / 2, 8, 12);
+    this.spriteGraphics.fillRect(playerScreenX + 7, playerScreenY - truckH / 2, 8, 12);
+
+    // Rear lights (large rectangular)
+    this.spriteGraphics.fillStyle(0xFF3333, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - truckW / 2 + 8, playerScreenY - truckH + 12, 15, 20, 2);
+    this.spriteGraphics.fillRoundedRect(playerScreenX + truckW / 2 - 23, playerScreenY - truckH + 12, 15, 20, 2);
+
+    // Orange indicator lights
+    this.spriteGraphics.fillStyle(0xFF9900, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - truckW / 2 + 8, playerScreenY - truckH + 35, 15, 10, 2);
+    this.spriteGraphics.fillRoundedRect(playerScreenX + truckW / 2 - 23, playerScreenY - truckH + 35, 15, 10, 2);
+
+    // License plate
+    this.spriteGraphics.fillStyle(0xFFFFFF, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - 40, playerScreenY - 25, 80, 22, 3);
+    this.spriteGraphics.fillStyle(0x1a5276, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - 37, playerScreenY - 23, 74, 18, 2);
+
+    // "Rush2C9" text on license plate
+    if (!this.licensePlateText) {
+      this.licensePlateText = this.add.text(0, 0, 'Rush2C9', {
+        fontSize: '14px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 1,
+      });
+      this.licensePlateText.setOrigin(0.5);
+      this.licensePlateText.setDepth(100);
+    }
+    this.licensePlateText.setPosition(playerScreenX, playerScreenY - 14);
+
+    // Rear wheels (larger, dual wheels)
+    this.spriteGraphics.fillStyle(0x111111, 1);
+    // Left wheels (dual)
+    this.spriteGraphics.fillRoundedRect(playerScreenX - truckW / 2 - 5, playerScreenY - 22, 14, 24, 3);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - truckW / 2 + 10, playerScreenY - 22, 14, 24, 3);
+    // Right wheels (dual)
+    this.spriteGraphics.fillRoundedRect(playerScreenX + truckW / 2 - 9, playerScreenY - 22, 14, 24, 3);
+    this.spriteGraphics.fillRoundedRect(playerScreenX + truckW / 2 - 24, playerScreenY - 22, 14, 24, 3);
+
+    // Wheel hubs
+    this.spriteGraphics.fillStyle(0x666666, 1);
+    this.spriteGraphics.fillCircle(playerScreenX - truckW / 2 + 2, playerScreenY - 10, 5);
+    this.spriteGraphics.fillCircle(playerScreenX + truckW / 2 - 2, playerScreenY - 10, 5);
+
+    // Mud flaps
+    this.spriteGraphics.fillStyle(0x222222, 1);
+    this.spriteGraphics.fillRect(playerScreenX - truckW / 2 - 8, playerScreenY - 5, 30, 6);
+    this.spriteGraphics.fillRect(playerScreenX + truckW / 2 - 22, playerScreenY - 5, 30, 6);
+
+    // Boost flames
+    if (this.boosting) {
+      this.spriteGraphics.fillStyle(0xFF6600, 0.9);
+      this.spriteGraphics.fillTriangle(
+        playerScreenX - 25, playerScreenY,
+        playerScreenX - 15, playerScreenY,
+        playerScreenX - 20, playerScreenY + 25 + Math.random() * 12
+      );
+      this.spriteGraphics.fillTriangle(
+        playerScreenX + 15, playerScreenY,
+        playerScreenX + 25, playerScreenY,
+        playerScreenX + 20, playerScreenY + 25 + Math.random() * 12
+      );
+    }
+  }
+
+  // ========== SEGMENT 3 VEHICLE: SPORTS CAR ==========
+  drawPlayerSportsCar(playerScreenX, playerScreenY) {
+    // Sports car - REAR VIEW - sleek and low
+    const carW = 95;
+    const carH = 40;
+
+    let bodyColor = 0xFFD700;  // Gold/yellow sports car
+
+    if (this.isHit && Math.floor(this.elapsedTime * 8) % 2 === 0) {
+      bodyColor = 0xFFFFFF;
+    } else if (this.boosting) {
+      bodyColor = 0xFF6600;
+    }
+
+    // Shadow under car
+    this.spriteGraphics.fillStyle(0x000000, 0.3);
+    this.spriteGraphics.fillEllipse(playerScreenX, playerScreenY + 3, carW * 1.15, 12);
+
+    // Main body (sleek, low profile)
+    this.spriteGraphics.fillStyle(bodyColor, 1);
+    this.spriteGraphics.fillRoundedRect(
+      playerScreenX - carW / 2,
+      playerScreenY - carH,
+      carW, carH, 8
+    );
+
+    // Rear spoiler
+    this.spriteGraphics.fillStyle(0x111111, 1);
+    this.spriteGraphics.fillRect(playerScreenX - carW * 0.45, playerScreenY - carH - 12, carW * 0.9, 4);
+    // Spoiler supports
+    this.spriteGraphics.fillRect(playerScreenX - carW * 0.35, playerScreenY - carH - 8, 4, 8);
+    this.spriteGraphics.fillRect(playerScreenX + carW * 0.31, playerScreenY - carH - 8, 4, 8);
+
+    // Roof/cabin (very low, sporty)
+    const roofColor = Phaser.Display.Color.ValueToColor(bodyColor);
+    roofColor.darken(10);
+    this.spriteGraphics.fillStyle(roofColor.color, 1);
+    this.spriteGraphics.fillRoundedRect(
+      playerScreenX - carW * 0.3,
+      playerScreenY - carH - 8,
+      carW * 0.6,
+      12,
+      4
+    );
+
+    // Rear window (wraparound style)
+    this.spriteGraphics.fillStyle(0x88CCFF, 0.9);
+    this.spriteGraphics.fillRoundedRect(
+      playerScreenX - carW * 0.25,
+      playerScreenY - carH - 4,
+      carW * 0.5,
+      8,
+      3
+    );
+
+    // Rear lights (LED strip style)
+    this.spriteGraphics.fillStyle(0xFF0000, 1);
+    this.spriteGraphics.fillRect(playerScreenX - carW / 2 + 5, playerScreenY - carH + 5, carW - 10, 4);
+
+    // Center brake light
+    this.spriteGraphics.fillStyle(0xFF3333, 1);
+    this.spriteGraphics.fillRect(playerScreenX - 15, playerScreenY - carH - 10, 30, 3);
+
+    // Exhaust pipes (quad exhaust for sports car)
+    this.spriteGraphics.fillStyle(0x444444, 1);
+    this.spriteGraphics.fillCircle(playerScreenX - 25, playerScreenY - 3, 6);
+    this.spriteGraphics.fillCircle(playerScreenX - 12, playerScreenY - 3, 6);
+    this.spriteGraphics.fillCircle(playerScreenX + 12, playerScreenY - 3, 6);
+    this.spriteGraphics.fillCircle(playerScreenX + 25, playerScreenY - 3, 6);
+
+    // Exhaust inner (darker)
+    this.spriteGraphics.fillStyle(0x222222, 1);
+    this.spriteGraphics.fillCircle(playerScreenX - 25, playerScreenY - 3, 4);
+    this.spriteGraphics.fillCircle(playerScreenX - 12, playerScreenY - 3, 4);
+    this.spriteGraphics.fillCircle(playerScreenX + 12, playerScreenY - 3, 4);
+    this.spriteGraphics.fillCircle(playerScreenX + 25, playerScreenY - 3, 4);
+
+    // License plate (smaller, sportier)
+    this.spriteGraphics.fillStyle(0xFFFFFF, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - 32, playerScreenY - carH + 12, 64, 16, 2);
+    this.spriteGraphics.fillStyle(0x1a5276, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - 29, playerScreenY - carH + 14, 58, 12, 2);
+
+    // "Rush2C9" text
+    if (!this.licensePlateText) {
+      this.licensePlateText = this.add.text(0, 0, 'Rush2C9', {
+        fontSize: '12px',
+        fontFamily: 'Arial Black, sans-serif',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 1,
+      });
+      this.licensePlateText.setOrigin(0.5);
+      this.licensePlateText.setDepth(100);
+    }
+    this.licensePlateText.setPosition(playerScreenX, playerScreenY - carH + 20);
+
+    // Wide rear wheels (performance tires)
+    this.spriteGraphics.fillStyle(0x111111, 1);
+    this.spriteGraphics.fillRoundedRect(playerScreenX - carW / 2 - 5, playerScreenY - 16, 16, 18, 4);
+    this.spriteGraphics.fillRoundedRect(playerScreenX + carW / 2 - 11, playerScreenY - 16, 16, 18, 4);
+
+    // Wheel rims (alloy style)
+    this.spriteGraphics.fillStyle(0x888888, 1);
+    this.spriteGraphics.fillCircle(playerScreenX - carW / 2 + 3, playerScreenY - 7, 6);
+    this.spriteGraphics.fillCircle(playerScreenX + carW / 2 - 3, playerScreenY - 7, 6);
+
+    // Boost flames (bigger for sports car)
+    if (this.boosting) {
+      this.spriteGraphics.fillStyle(0xFF6600, 0.9);
+      // Four flames from quad exhaust
+      this.spriteGraphics.fillTriangle(
+        playerScreenX - 28, playerScreenY,
+        playerScreenX - 22, playerScreenY,
+        playerScreenX - 25, playerScreenY + 18 + Math.random() * 8
+      );
+      this.spriteGraphics.fillTriangle(
+        playerScreenX - 15, playerScreenY,
+        playerScreenX - 9, playerScreenY,
+        playerScreenX - 12, playerScreenY + 18 + Math.random() * 8
+      );
+      this.spriteGraphics.fillTriangle(
+        playerScreenX + 9, playerScreenY,
+        playerScreenX + 15, playerScreenY,
+        playerScreenX + 12, playerScreenY + 18 + Math.random() * 8
+      );
+      this.spriteGraphics.fillTriangle(
+        playerScreenX + 22, playerScreenY,
+        playerScreenX + 28, playerScreenY,
+        playerScreenX + 25, playerScreenY + 18 + Math.random() * 8
+      );
+    }
   }
 
   drawBoostIndicator(x, y) {
