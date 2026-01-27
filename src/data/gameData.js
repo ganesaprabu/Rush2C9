@@ -351,6 +351,7 @@ export const GAME_CONFIG = {
   // Credits
   startingCredits: 200,
   boostCost: 0,            // Boost is now FREE (system-driven cooldown)
+  skipSegmentCost: 100,    // Cost to skip segment 2 and go directly to segment 3
 
   // Scoring (based on distance/time)
   basePoints: 500,

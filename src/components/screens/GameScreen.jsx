@@ -6,6 +6,7 @@ import {
   VEHICLES_ARRAY,
   ROAD_TYPES,
   GAME_CONFIG,
+  SEGMENT_CONFIG,
   getRandomStartingCity,
   generateRouteSegments,
   getSpeedRating
@@ -74,13 +75,24 @@ function GameScreen() {
 
   // ===== EVENT HANDLERS (defined before effects that use them) =====
 
-  // Continue to next racing segment
+  // Continue to next racing segment (Segment 2 - Truck)
   const handleContinueRacing = useCallback(() => {
     setCurrentSegment((prev) => prev + 1);
     setProgress(0);
     setElapsedTime(0);
     setGameState('racing');
   }, []);
+
+  // Skip to Segment 3 (Race Car) - costs credits
+  const handleSkipToSegment3 = useCallback(() => {
+    if (credits >= GAME_CONFIG.skipSegmentCost) {
+      setCredits((prev) => prev - GAME_CONFIG.skipSegmentCost);
+      setCurrentSegment(2); // Jump directly to segment 3 (index 2)
+      setProgress(0);
+      setElapsedTime(0);
+      setGameState('racing');
+    }
+  }, [credits]);
 
   // Continue from victory celebration to pit stop or results
   const handleContinueFromVictory = useCallback(() => {
@@ -411,19 +423,6 @@ function GameScreen() {
   // Pit Stop state
   if (gameState === 'pit_stop') {
     const completedSegment = segments[currentSegment];
-    const nextSegment = segments[currentSegment + 1];
-    const nextRoadType = ROAD_TYPES[nextSegment?.roadType];
-    const currentVehicleData = VEHICLES[currentVehicle];
-    const currentSpeedRating = getSpeedRating(
-      currentVehicleData?.speedOnRoad[nextSegment?.roadType] || 1
-    );
-
-    // Find best vehicle for next road
-    const bestVehicle = VEHICLES_ARRAY.reduce((best, v) => {
-      const vSpeed = v.speedOnRoad[nextSegment?.roadType] || 0;
-      const bestSpeed = best.speedOnRoad[nextSegment?.roadType] || 0;
-      return vSpeed > bestSpeed ? v : best;
-    }, VEHICLES_ARRAY[0]);
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-6">
@@ -435,23 +434,18 @@ function GameScreen() {
             <p className="text-gray-400">
               {completedSegment?.from} → {completedSegment?.to}
             </p>
-            {/* Segment Stats */}
-            <div className="flex justify-center gap-4 mt-3 text-sm">
-              <div className="bg-gray-800/50 rounded-lg px-3 py-2">
-                <span className="text-cyan-400">{segmentResults[currentSegment]?.time?.toFixed(1)}s</span>
-                <span className="text-gray-400 ml-1">Time</span>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg px-3 py-2">
-                <span className="text-red-400">{segmentResults[currentSegment]?.obstaclesHit || 0}</span>
-                <span className="text-gray-400 ml-1">Hits</span>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg px-3 py-2">
-                <span className="text-yellow-400">
-                  {segmentResults[currentSegment]?.boostsUsed || 0}/{segmentResults[currentSegment]?.boostsAvailable || 0}
-                </span>
-                <span className="text-gray-400 ml-1">Boost</span>
-              </div>
-            </div>
+            {/* Segment Stats - Single Line */}
+            <p className="mt-3 text-xl">
+              <span className="text-blue-400">{SEGMENT_CONFIG.distances[currentSegment]}km</span>
+              <span className="text-gray-500"> | </span>
+              <span className="text-cyan-400">{segmentResults[currentSegment]?.time?.toFixed(1)}s</span>
+              <span className="text-gray-500"> | </span>
+              <span className="text-red-400">{segmentResults[currentSegment]?.obstaclesHit || 0} Hits</span>
+              <span className="text-gray-500"> | </span>
+              <span className="text-yellow-400">{segmentResults[currentSegment]?.boostsUsed || 0}/{segmentResults[currentSegment]?.boostsAvailable || 0} Boost</span>
+              <span className="text-gray-500"> | </span>
+              <span className="text-green-400">{credits} Credits</span>
+            </p>
             {/* Current Score */}
             <div className="mt-4 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 rounded-lg px-4 py-2 inline-block border border-yellow-700/50">
               <span className="text-gray-400 text-sm">Current Score: </span>
@@ -459,99 +453,79 @@ function GameScreen() {
             </div>
           </div>
 
-          {/* Next segment info */}
-          <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
-            <p className="text-sm text-gray-400 mb-2">NEXT SEGMENT</p>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-3xl">{nextRoadType?.emoji}</span>
-              <div>
-                <p className="font-semibold">
-                  {nextSegment?.from} → {nextSegment?.to}
-                </p>
-                <p className="text-sm text-gray-400">{nextRoadType?.name}</p>
-              </div>
-            </div>
-
-            {/* Current vehicle status */}
-            <div className="flex items-center justify-between bg-gray-900/50 rounded-lg p-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{currentVehicleData?.emoji}</span>
-                <span className="text-sm">{currentVehicleData?.name}</span>
-              </div>
-              <div
-                className="text-sm font-bold px-2 py-1 rounded"
-                style={{
-                  backgroundColor: currentSpeedRating.color + '30',
-                  color: currentSpeedRating.color,
-                }}
-              >
-                {currentSpeedRating.label}
-              </div>
-            </div>
-
-            {/* Recommendation */}
-            {bestVehicle.id !== currentVehicle && credits >= bestVehicle.cost && (
-              <p className="text-sm text-yellow-400 mt-3">
-                💡 {bestVehicle.emoji} {bestVehicle.name} is better for {nextRoadType?.name}!
-              </p>
-            )}
-          </div>
-
-          {/* Vehicle switch options */}
+          {/* Choose Your Path */}
           <div className="mb-6">
-            <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold">Switch Vehicle?</p>
-              <p className="text-yellow-400">💳 {credits}</p>
-            </div>
+            <p className="text-center font-semibold mb-4 text-lg">Choose Your Path</p>
 
-            <div className="grid grid-cols-2 gap-2">
-              {VEHICLES_ARRAY.filter((v) => v.id !== currentVehicle).map((vehicle) => {
-                const speedRating = getSpeedRating(vehicle.speedOnRoad[nextSegment?.roadType]);
-                const canAfford = credits >= vehicle.cost;
+            {/* Option 1: Continue to Segment 2 (Truck) - FREE */}
+            <button
+              onClick={handleContinueRacing}
+              className="w-full mb-6 p-4 bg-gradient-to-r from-blue-900/50 to-blue-800/50 hover:from-blue-800/50 hover:to-blue-700/50 rounded-xl border border-blue-600/50 transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🚛</span>
+                  <div className="text-left">
+                    <p className="font-bold">Segment 2 - Truck</p>
+                    <p className="text-sm text-gray-400">200 km/h • 7 km</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400 font-bold text-lg">FREE</span>
+                  <span className="text-green-400 text-xl">→</span>
+                </div>
+              </div>
+            </button>
 
-                return (
-                  <button
-                    key={vehicle.id}
-                    disabled={!canAfford}
-                    onClick={() => handleSwitchVehicle(vehicle.id)}
-                    className={`p-3 rounded-xl text-left transition-all ${
-                      canAfford
-                        ? 'bg-gray-800 hover:bg-gray-700'
-                        : 'bg-gray-900 opacity-40 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xl">{vehicle.emoji}</span>
-                      <span className="text-sm font-semibold">{vehicle.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span
-                        className="text-xs px-1.5 py-0.5 rounded"
-                        style={{
-                          backgroundColor: speedRating.color + '30',
-                          color: speedRating.color,
-                        }}
-                      >
-                        {speedRating.label}
-                      </span>
-                      <span className="text-xs text-yellow-400">{vehicle.cost} 💳</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Option 2: Skip to Segment 3 (Race Car) - 100 credits */}
+            <button
+              onClick={handleSkipToSegment3}
+              disabled={credits < GAME_CONFIG.skipSegmentCost}
+              className={`w-full p-4 rounded-xl border transition-all ${
+                credits >= GAME_CONFIG.skipSegmentCost
+                  ? 'bg-gradient-to-r from-purple-900/50 to-pink-900/50 hover:from-purple-800/50 hover:to-pink-800/50 border-purple-600/50 hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle'
+                  : 'bg-gray-900/50 border-gray-700/50 opacity-50 cursor-not-allowed'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🏎️</span>
+                  <div className="text-left">
+                    <p className="font-bold">Skip to Segment 3 - Race Car</p>
+                    <p className="text-sm text-gray-400">225 km/h • 9 km</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`font-bold text-lg ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>
+                    -{GAME_CONFIG.skipSegmentCost} 💳
+                  </span>
+                  <span className={`text-xl ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>→</span>
+                </div>
+              </div>
+              {credits < GAME_CONFIG.skipSegmentCost && (
+                <p className="text-xs text-red-400 mt-2 text-center">Not enough credits</p>
+              )}
+            </button>
           </div>
 
-          {/* Continue button - user must click to proceed */}
-          <button
-            onClick={handleContinueRacing}
-            className="w-full py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg transition-all animate-pulse"
-          >
-            🏁 Continue to Segment {currentSegment + 2}
-          </button>
-          <p className="text-center text-gray-400 text-sm mt-2">
-            Using {currentVehicleData?.emoji} {currentVehicleData?.name}
-          </p>
+          {/* Animation styles */}
+          <style>{`
+            @keyframes pulse-glow {
+              0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+                transform: scale(1);
+              }
+              50% {
+                opacity: 0.9;
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+                transform: scale(1.02);
+              }
+            }
+            .animate-pulse-subtle {
+              animation: pulse-glow 1.5s ease-in-out infinite;
+            }
+          `}</style>
         </div>
       </div>
     );
