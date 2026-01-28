@@ -40,6 +40,9 @@ firebase-debug.log
 *.local
 .cache/
 
+# Claude AI instructions (private)
+CLAUDE.md
+
 # Temp files
 temp/
 tmp/
