@@ -28,6 +28,7 @@ class RacingScene extends Phaser.Scene {
     this.onComplete = config.onComplete || (() => {});
     this.onStats = config.onStats || (() => {}); // For speed & distance updates
     this.onBoostReady = config.onBoostReady || (() => {}); // For boost availability
+    this.onRaceStart = config.onRaceStart || (() => {}); // Called when countdown finishes
 
     this.vehicleId = config.vehicleId || 'car';
     this.roadType = config.roadType || 'highway';
@@ -250,6 +251,9 @@ class RacingScene extends Phaser.Scene {
 
         // Start with initial speed
         this.speed = this.maxSpeed * 0.5;
+
+        // Notify GameScreen that race has started (for timer)
+        this.onRaceStart();
       }
     }
   }

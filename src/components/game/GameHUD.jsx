@@ -4,15 +4,16 @@ import { memo } from 'react';
  * GameHUD - Compact single-row heads-up display
  * Memoized to prevent unnecessary re-renders that affect touch responsiveness
  *
- * Displays: Segment | Credits | Time | Speed | Distance | Progress
+ * Displays: Segment | Credits | Time | Speed | Progress
+ * Note: Distance removed - progress bar shows journey progress
  */
 const GameHUD = memo(function GameHUD({
   credits = 200,
   progress = 0,
   time = 0,
   speed = 0,
-  distance = 0,
-  // totalDistance - not displayed but kept for potential future use
+  // distance - removed from display (progress bar shows progress)
+  // totalDistance - not displayed but kept for game length calculation
   segmentNumber = 1,
   totalSegments = 3,
   isBoosting = false
@@ -20,16 +21,13 @@ const GameHUD = memo(function GameHUD({
   // Format time as seconds
   const timeDisplay = Math.floor(time);
 
-  // Format distance
-  const distanceDisplay = distance.toFixed(1);
-
   // Stabilize speed (round to nearest 5)
   const speedDisplay = Math.round(speed / 5) * 5;
 
   return (
     <div className="p-2 pointer-events-none">
       {/* Row 1: Stats */}
-      <div className="bg-black/70 backdrop-blur-sm rounded-t-lg px-3 py-2 flex items-center justify-between gap-2 text-sm">
+      <div className="bg-black/70 backdrop-blur-sm rounded-t-lg px-4 pt-3 pb-1 flex items-center justify-between gap-3 text-lg">
         {/* Segment */}
         <div className="flex items-center gap-1">
           <span className="text-gray-400">Seg</span>
@@ -37,7 +35,7 @@ const GameHUD = memo(function GameHUD({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-gray-600" />
+        <div className="w-px h-6 bg-gray-600" />
 
         {/* Credits */}
         <div className="flex items-center gap-1">
@@ -46,7 +44,7 @@ const GameHUD = memo(function GameHUD({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-gray-600" />
+        <div className="w-px h-6 bg-gray-600" />
 
         {/* Time */}
         <div className="flex items-center gap-1">
@@ -55,21 +53,12 @@ const GameHUD = memo(function GameHUD({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-5 bg-gray-600" />
+        <div className="w-px h-6 bg-gray-600" />
 
         {/* Speed */}
         <div className="flex items-center gap-1">
           <span>🚗</span>
           <span className={`font-bold ${isBoosting ? 'text-yellow-400' : 'text-cyan-400'}`}>{speedDisplay}</span>
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-5 bg-gray-600" />
-
-        {/* Distance */}
-        <div className="flex items-center gap-1">
-          <span>📍</span>
-          <span className="font-bold text-white">{distanceDisplay}km</span>
         </div>
       </div>
 

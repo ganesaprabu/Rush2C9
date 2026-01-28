@@ -62,6 +62,7 @@ function GameScreen() {
   // Racing state
   const [progress, setProgress] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [raceStarted, setRaceStarted] = useState(false); // True after countdown finishes
   const [isBoosting, setIsBoosting] = useState(false);
   const [boostReady, setBoostReady] = useState(false); // System-driven boost availability
   const [speed, setSpeed] = useState(0);
@@ -80,6 +81,7 @@ function GameScreen() {
     setCurrentSegment((prev) => prev + 1);
     setProgress(0);
     setElapsedTime(0);
+    setRaceStarted(false); // Reset for new segment countdown
     setGameState('racing');
   }, []);
 
@@ -90,6 +92,7 @@ function GameScreen() {
       setCurrentSegment(2); // Jump directly to segment 3 (index 2)
       setProgress(0);
       setElapsedTime(0);
+      setRaceStarted(false); // Reset for new segment countdown
       setGameState('racing');
     }
   }, [credits]);
@@ -155,15 +158,15 @@ function GameScreen() {
   // Pit Stop - NO auto-countdown anymore
   // User must click to proceed to next segment
 
-  // Racing timer - track elapsed time (stops when race completes at 100% progress)
+  // Racing timer - track elapsed time (starts after countdown, stops at 100% progress)
   useEffect(() => {
-    if (gameState === 'racing' && progress < 100) {
+    if (gameState === 'racing' && raceStarted && progress < 100) {
       const interval = setInterval(() => {
         setElapsedTime((prev) => prev + 0.1);
       }, 100);
       return () => clearInterval(interval);
     }
-  }, [gameState, progress]);
+  }, [gameState, raceStarted, progress]);
 
   // Switch vehicle at pit stop
   const handleSwitchVehicle = useCallback(
@@ -208,6 +211,11 @@ function GameScreen() {
     if (!ready) {
       setIsBoosting(false);
     }
+  }, []);
+
+  // Race started (countdown finished in Phaser)
+  const handleRaceStart = useCallback(() => {
+    setRaceStarted(true);
   }, []);
 
   // Steer control - pass to Phaser
@@ -320,6 +328,7 @@ function GameScreen() {
             onBoostUsed={handleBoostUsed}
             onBoostReady={handleBoostReady}
             onSegmentComplete={handleSegmentComplete}
+            onRaceStart={handleRaceStart}
           />
         </div>
 
@@ -436,8 +445,6 @@ function GameScreen() {
             </p>
             {/* Segment Stats - Single Line */}
             <p className="mt-3 text-xl">
-              <span className="text-blue-400">{SEGMENT_CONFIG.distances[currentSegment]}km</span>
-              <span className="text-gray-500"> | </span>
               <span className="text-cyan-400">{segmentResults[currentSegment]?.time?.toFixed(1)}s</span>
               <span className="text-gray-500"> | </span>
               <span className="text-red-400">{segmentResults[currentSegment]?.obstaclesHit || 0} Hits</span>
@@ -470,7 +477,7 @@ function GameScreen() {
                       <span className="text-3xl">🚛</span>
                       <div className="text-left">
                         <p className="font-bold">Segment 2 - Truck</p>
-                        <p className="text-sm text-gray-400">200 km/h • 7 km</p>
+                        <p className="text-sm text-gray-400">200 km/h</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -495,7 +502,7 @@ function GameScreen() {
                       <span className="text-3xl">🏎️</span>
                       <div className="text-left">
                         <p className="font-bold">Skip to Segment 3 - Race Car</p>
-                        <p className="text-sm text-gray-400">225 km/h • 9 km</p>
+                        <p className="text-sm text-gray-400">225 km/h</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -525,7 +532,7 @@ function GameScreen() {
                       <span className="text-3xl">🏎️</span>
                       <div className="text-left">
                         <p className="font-bold">Segment 3 - Race Car</p>
-                        <p className="text-sm text-gray-400">225 km/h • 9 km</p>
+                        <p className="text-sm text-gray-400">225 km/h</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

@@ -17,6 +17,7 @@ import RacingScene from './RacingScene';
  * - onBoostUsed: Callback when boost is used
  * - onBoostReady: Callback when boost becomes available/unavailable
  * - onSegmentComplete: Callback when segment is done (time, obstaclesHit, boostsUsed, boostsAvailable)
+ * - onRaceStart: Callback when countdown finishes and race actually begins
  */
 const PhaserGame = forwardRef(function PhaserGame({
   vehicleId = 'car',
@@ -29,16 +30,17 @@ const PhaserGame = forwardRef(function PhaserGame({
   onObstacleHit,
   onBoostUsed,
   onBoostReady,
-  onSegmentComplete
+  onSegmentComplete,
+  onRaceStart
 }, ref) {
   const gameRef = useRef(null);
   const containerRef = useRef(null);
-  const callbacksRef = useRef({ onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete });
+  const callbacksRef = useRef({ onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete, onRaceStart });
 
   // Keep callbacks up to date
   useEffect(() => {
-    callbacksRef.current = { onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete };
-  }, [onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete]);
+    callbacksRef.current = { onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete, onRaceStart };
+  }, [onProgress, onStats, onObstacleHit, onBoostUsed, onBoostReady, onSegmentComplete, onRaceStart]);
 
   // Initialize Phaser game
   useEffect(() => {
@@ -57,7 +59,8 @@ const PhaserGame = forwardRef(function PhaserGame({
       onObstacleHit: () => callbacksRef.current.onObstacleHit?.(),
       onBoostUsed: () => callbacksRef.current.onBoostUsed?.(),
       onBoostReady: (ready) => callbacksRef.current.onBoostReady?.(ready),
-      onComplete: (time, obstaclesHit, boostsUsed, boostsAvailable) => callbacksRef.current.onSegmentComplete?.(time, obstaclesHit, boostsUsed, boostsAvailable)
+      onComplete: (time, obstaclesHit, boostsUsed, boostsAvailable) => callbacksRef.current.onSegmentComplete?.(time, obstaclesHit, boostsUsed, boostsAvailable),
+      onRaceStart: () => callbacksRef.current.onRaceStart?.()
     });
 
     // Phaser game configuration
