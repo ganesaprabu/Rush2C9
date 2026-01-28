@@ -1573,31 +1573,33 @@ class RacingScene extends Phaser.Scene {
     this.spriteGraphics.fillRect(x - barW / 3, y - legH, legW, legH);
     this.spriteGraphics.fillRect(x + barW / 3 - legW, y - legH, legW, legH);
 
-    // Large green arrow pointing to safe side
-    if (barW > 20) {
-      // Arrow background circle
-      const arrowX = x + (side < 0 ? barW * 0.7 : -barW * 0.7);
-      const arrowSize = Math.max(10, barW * 0.18);
+    // Subtle warning: reflective dots on yellow strips (like road reflectors)
+    // Only show when barricade is close enough to see detail
+    if (barW > 30) {
+      const dotSize = Math.max(2, barW * 0.025);
+      const dotSpacing = barW / 5;
 
-      // Green circle background
-      this.spriteGraphics.fillStyle(0x00AA00, 1);
-      this.spriteGraphics.fillCircle(arrowX, y - barH / 2, arrowSize * 0.8);
+      // Subtle shimmer effect - dots alternate brightness based on time
+      const shimmer = Math.sin(this.time.now * 0.005) > 0;
+      const dotColor = shimmer ? 0xFFFFFF : 0xFFEE88;
 
-      // White arrow inside
-      this.spriteGraphics.fillStyle(0xFFFFFF, 1);
-      if (side < 0) {
-        // Obstacle on left, arrow points right
-        this.spriteGraphics.fillTriangle(
-          arrowX + arrowSize * 0.4, y - barH / 2,
-          arrowX - arrowSize * 0.3, y - barH / 2 - arrowSize * 0.4,
-          arrowX - arrowSize * 0.3, y - barH / 2 + arrowSize * 0.4
+      this.spriteGraphics.fillStyle(dotColor, 0.9);
+
+      // Dots on top yellow strip
+      for (let i = 1; i < 5; i++) {
+        this.spriteGraphics.fillCircle(
+          x - barW / 2 + i * dotSpacing,
+          y - barH - 1,
+          dotSize
         );
-      } else {
-        // Obstacle on right, arrow points left
-        this.spriteGraphics.fillTriangle(
-          arrowX - arrowSize * 0.4, y - barH / 2,
-          arrowX + arrowSize * 0.3, y - barH / 2 - arrowSize * 0.4,
-          arrowX + arrowSize * 0.3, y - barH / 2 + arrowSize * 0.4
+      }
+
+      // Dots on bottom yellow strip
+      for (let i = 1; i < 5; i++) {
+        this.spriteGraphics.fillCircle(
+          x - barW / 2 + i * dotSpacing,
+          y - 2,
+          dotSize
         );
       }
     }
@@ -1642,7 +1644,7 @@ class RacingScene extends Phaser.Scene {
   }
 
   drawOilBarrel(x, y, scale, side) {
-    // Oil barrel obstacle - cylinder shape
+    // Biohazard barrel - orange with white stripe
     const barrelW = Math.max(20, scale * 800);
     const barrelH = Math.max(25, scale * 1000);
 
@@ -1652,45 +1654,77 @@ class RacingScene extends Phaser.Scene {
     this.spriteGraphics.fillStyle(0x000000, 0.4);
     this.spriteGraphics.fillEllipse(x + 3, y + 2, barrelW * 1.1, barrelH * 0.3);
 
-    // Barrel body (dark red/maroon)
-    this.spriteGraphics.fillStyle(0x8B0000, 1);
+    // Barrel body (orange)
+    this.spriteGraphics.fillStyle(0xE65C00, 1);
     this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH, barrelW, barrelH);
 
-    // Barrel top ellipse
-    this.spriteGraphics.fillStyle(0x660000, 1);
-    this.spriteGraphics.fillEllipse(x, y - barrelH, barrelW / 2, barrelH * 0.15);
+    // Darker edge for 3D effect (left side)
+    this.spriteGraphics.fillStyle(0xCC4400, 1);
+    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH, barrelW * 0.15, barrelH);
 
-    // Barrel bottom ellipse
-    this.spriteGraphics.fillStyle(0x440000, 1);
-    this.spriteGraphics.fillEllipse(x, y, barrelW / 2, barrelH * 0.12);
+    // Lighter edge for 3D effect (right side highlight)
+    this.spriteGraphics.fillStyle(0xFF7722, 1);
+    this.spriteGraphics.fillRect(x + barrelW * 0.35, y - barrelH, barrelW * 0.15, barrelH);
 
-    // Metal bands (silver/gray stripes)
-    this.spriteGraphics.fillStyle(0x888888, 1);
-    const bandH = Math.max(2, barrelH * 0.08);
-    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH * 0.85, barrelW, bandH);
-    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH * 0.15, barrelW, bandH);
+    // Barrel top cap (darker brown/rust)
+    this.spriteGraphics.fillStyle(0x4a3520, 1);
+    this.spriteGraphics.fillEllipse(x, y - barrelH, barrelW / 2, barrelH * 0.12);
 
-    // Hazard symbol (yellow triangle with exclamation)
-    if (barrelW > 15) {
-      // Yellow warning triangle
-      this.spriteGraphics.fillStyle(0xFFCC00, 1);
-      const triSize = barrelW * 0.4;
-      this.spriteGraphics.fillTriangle(
-        x, y - barrelH * 0.7,
-        x - triSize, y - barrelH * 0.35,
-        x + triSize, y - barrelH * 0.35
-      );
-      // Black exclamation
+    // Barrel bottom edge
+    this.spriteGraphics.fillStyle(0x3a2510, 1);
+    this.spriteGraphics.fillEllipse(x, y, barrelW / 2, barrelH * 0.1);
+
+    // White stripe band in the middle
+    this.spriteGraphics.fillStyle(0xEEEEEE, 1);
+    const bandY = y - barrelH * 0.55;
+    const bandH = barrelH * 0.25;
+    this.spriteGraphics.fillRect(x - barrelW / 2, bandY, barrelW, bandH);
+
+    // Slight gray edge on white band for depth
+    this.spriteGraphics.fillStyle(0xCCCCCC, 1);
+    this.spriteGraphics.fillRect(x - barrelW / 2, bandY, barrelW * 0.1, bandH);
+
+    // Biohazard symbol on white band (simplified)
+    if (barrelW > 18) {
+      const symbolX = x;
+      const symbolY = bandY + bandH / 2;
+      const symbolSize = Math.min(barrelW * 0.3, bandH * 0.4);
+
+      // Black biohazard symbol - simplified as three circles with center
       this.spriteGraphics.fillStyle(0x000000, 1);
-      this.spriteGraphics.fillRect(x - barrelW * 0.05, y - barrelH * 0.6, barrelW * 0.1, barrelH * 0.15);
-      this.spriteGraphics.fillCircle(x, y - barrelH * 0.4, barrelW * 0.06);
+
+      // Center circle
+      this.spriteGraphics.fillCircle(symbolX, symbolY, symbolSize * 0.25);
+
+      // Three outer circles (trefoil pattern)
+      const angleOffset = -Math.PI / 2; // Start from top
+      for (let i = 0; i < 3; i++) {
+        const angle = angleOffset + (i * Math.PI * 2 / 3);
+        const cx = symbolX + Math.cos(angle) * symbolSize * 0.5;
+        const cy = symbolY + Math.sin(angle) * symbolSize * 0.5;
+        this.spriteGraphics.fillCircle(cx, cy, symbolSize * 0.3);
+      }
+
+      // White gaps to create biohazard look
+      this.spriteGraphics.fillStyle(0xEEEEEE, 1);
+      this.spriteGraphics.fillCircle(symbolX, symbolY, symbolSize * 0.12);
+
+      // Three small white gaps between lobes
+      for (let i = 0; i < 3; i++) {
+        const angle = angleOffset + Math.PI / 3 + (i * Math.PI * 2 / 3);
+        const gx = symbolX + Math.cos(angle) * symbolSize * 0.35;
+        const gy = symbolY + Math.sin(angle) * symbolSize * 0.35;
+        this.spriteGraphics.fillCircle(gx, gy, symbolSize * 0.12);
+      }
     }
 
-    // "OIL" text
-    if (barrelW > 25) {
-      this.spriteGraphics.fillStyle(0xFFFFFF, 1);
-      // Simple text representation
-    }
+    // Top metal rim
+    this.spriteGraphics.fillStyle(0x555555, 1);
+    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH - barrelH * 0.02, barrelW, barrelH * 0.04);
+
+    // Bottom metal rim
+    this.spriteGraphics.fillStyle(0x444444, 1);
+    this.spriteGraphics.fillRect(x - barrelW / 2, y - barrelH * 0.04, barrelW, barrelH * 0.04);
   }
 
   drawDebris(x, y, scale, side) {
@@ -1806,10 +1840,10 @@ class RacingScene extends Phaser.Scene {
     this.spriteGraphics.fillStyle(0xFF6600, 1);
     this.spriteGraphics.fillRect(x - barrierW * 0.45, y - barrierH * 0.7, barrierW * 0.9, barrierH * 0.4);
 
-    // White diagonal stripes
+    // White diagonal stripes (4 stripes to fit within barrier)
     this.spriteGraphics.fillStyle(0xFFFFFF, 1);
     const stripeWidth = barrierW * 0.12;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
       const sx = x - barrierW * 0.4 + i * stripeWidth * 2;
       this.spriteGraphics.beginPath();
       this.spriteGraphics.moveTo(sx, y - barrierH * 0.7);
@@ -1835,7 +1869,7 @@ class RacingScene extends Phaser.Scene {
 
   drawTireStack(x, y, scale, side) {
     // Single large tire standing upright on the road (like race track barrier)
-    const tireSize = Math.max(30, scale * 1200);  // Diameter of tire
+    const tireSize = Math.max(40, scale * 1600);  // Enlarged tire
 
     if (tireSize < 15) return;
 
@@ -1889,17 +1923,17 @@ class RacingScene extends Phaser.Scene {
   }
 
   drawConeCluster(x, y, scale, side) {
-    // Cluster of traffic cones
+    // Cluster of traffic cones - straight line arrangement
     const coneW = Math.max(15, scale * 500);
-    const coneH = Math.max(25, scale * 800);
+    const coneH = Math.max(18, scale * 550);  // Reduced height
 
     if (coneW < 8) return;
 
-    // Draw 3 cones in a cluster
+    // Draw 3 cones in a straight line
     const positions = [
-      { dx: 0, dy: 0 },
-      { dx: -coneW * 0.8, dy: coneH * 0.1 },
-      { dx: coneW * 0.7, dy: coneH * 0.15 }
+      { dx: -coneW * 0.9, dy: 0 },  // Left
+      { dx: 0, dy: 0 },              // Center
+      { dx: coneW * 0.9, dy: 0 }     // Right
     ];
 
     for (const pos of positions) {

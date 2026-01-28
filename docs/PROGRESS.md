@@ -12,10 +12,13 @@
 > 2. /docs/PROGRESS.md — What's done, what's next
 > 3. /docs/GAME_MECHANICS.md — Game rules, scoring, vehicles
 > 4. /docs/GIT_STRATEGY.md — How we manage commits and tags
+> 5. /CLAUDE.md — Instructions for Claude (git rules, dev server, implementation flow)
 >
 > The workspace folder is: /Users/ganesaprabunavamanirajan/Development/AI/Hackathon/JetBrains_Feb_2026_Game/Rush2C9
 >
 > Let's continue from where we left off. Check PROGRESS.md for current status.
+>
+> Note: Please go through carefully. I need some help from you. I will ask you.
 > ```
 
 ---

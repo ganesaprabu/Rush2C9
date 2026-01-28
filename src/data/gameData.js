@@ -328,7 +328,7 @@ export const SEGMENT_CONFIG = {
   // Obstacle types for each segment (progressively harder)
   obstacles: [
     ['hole', 'barricade'],           // Segment 1: Basic obstacles
-    ['oil_barrel', 'broken_crate', 'construction_barrier'],  // Segment 2: Medium difficulty
+    ['oil_barrel', 'construction_barrier'],  // Segment 2: Medium difficulty (biohazard barrel)
     ['tire_stack', 'cone_cluster'],  // Segment 3: Hard (to be implemented)
   ],
 
