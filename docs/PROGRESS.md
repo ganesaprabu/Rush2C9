@@ -530,6 +530,92 @@ Rush2C9 — Fans race from random cities worldwide to reach Cloud9's arenas (LCS
 
 ---
 
+### January 27, 2026 (Day 7) — Segment 2 & 3 Implementation
+
+**Session Focus:** Extend single-segment game to full 3-segment journey with unique vehicles and obstacles
+
+**Completed:**
+
+**1. Segment 2 & 3 Implementation** ✅
+- [x] Segment 1: Car with basic obstacles (hole, barricade)
+- [x] Segment 2: Truck with medium obstacles (oil barrel → biohazard barrel, construction barrier)
+- [x] Segment 3: Race Car with hard obstacles (tire stack, cone cluster)
+- [x] Unique vehicle visuals for each segment
+- [x] Progressive difficulty across segments
+
+**2. Pit Stop Path Selection** ✅
+- [x] After Segment 1: Choose Segment 2 (FREE) or Skip to Segment 3 (-100 credits)
+- [x] After Segment 2: Choose Segment 3 (FREE) or End Game
+- [x] Segment stats display (time, hits, boosts, credits)
+- [x] Current score display at pit stop
+
+**3. Scoring Improvements** ✅
+- [x] Score calculation based on time, hits, and boosts
+- [x] Segment results tracking (time, obstaclesHit, boostsUsed, boostsAvailable)
+
+**Commits:**
+- `0de222e` — feat: Implement Segment 2 & 3 with unique vehicles and obstacles
+- `b93b11d` — feat: Add Pit Stop path selection and scoring improvements
+
+**Code Changes:**
+| File | Changes |
+|------|---------|
+| `RacingScene.js` | Added Segment 2 & 3 obstacles, vehicle drawings |
+| `GameScreen.jsx` | Pit Stop flow, segment selection, scoring |
+| `gameData.js` | Segment config, obstacle definitions |
+
+---
+
+### January 28, 2026 (Day 8) — HUD Cleanup & Timer Fix
+
+**Session Focus:** Remove unnecessary distance displays and fix countdown timer issue
+
+**Completed:**
+
+**1. HUD Cleanup** ✅
+- [x] Removed distance (📍 km) display from HUD — progress bar already shows journey progress
+- [x] Increased HUD font size (`text-sm` → `text-lg`) for better readability
+- [x] Increased padding and gap for cleaner look (`px-3` → `px-4`, `gap-2` → `gap-3`)
+- [x] Reduced gap between stats bar and progress bar (`py-3` → `pt-3 pb-1`)
+- [x] Taller dividers to match larger text (`h-5` → `h-6`)
+
+**2. Pit Stop Screen Cleanup** ✅
+- [x] Removed km from segment stats display (was showing `5km | 45.2s | 3 Hits`)
+- [x] Removed km from segment selection buttons:
+  - "200 km/h • 7 km" → "200 km/h"
+  - "225 km/h • 9 km" → "225 km/h"
+- [x] Distance config (`SEGMENT_CONFIG.distances`) kept in background for game length calculation
+
+**3. Timer Countdown Fix** ✅
+- [x] Fixed timer starting during countdown (was showing 2s, 3s before "GO!")
+- [x] Added `raceStarted` state to GameScreen
+- [x] Added `onRaceStart` callback from RacingScene to signal countdown complete
+- [x] Timer now starts from 0 only after "GO!" appears
+
+**Code Changes:**
+| File | Changes |
+|------|---------|
+| `GameHUD.jsx` | Removed distance display, increased font size, adjusted padding |
+| `GameScreen.jsx` | Added raceStarted state, handleRaceStart callback, removed km from Pit Stop |
+| `PhaserGame.jsx` | Added onRaceStart prop passthrough |
+| `RacingScene.js` | Added onRaceStart callback, called when countdown phase 4 completes |
+
+**HUD Before vs After:**
+| Before | After |
+|--------|-------|
+| `Seg 1/3 \| 💳 200 \| ⏱️ 29s \| 🚗 195 \| 📍 1.4km` | `Seg 1/3 \| 💳 200 \| ⏱️ 29s \| 🚗 195` |
+| Small font (`text-sm`) | Large font (`text-lg`) |
+| Timer started during countdown | Timer starts after "GO!" |
+
+**Committed:** ✅ `ccb63e6` — "feat: Clean up HUD and fix timer countdown issue"
+
+**Next Session:**
+- Consider fantasy distances for gantry signs (story immersion)
+- Mobile touch responsiveness improvement
+- Leaderboard integration (v4.0)
+
+---
+
 ## Contact
 
 **Developer:** GANESAPRABU NAVAMANIRAJAN
