@@ -696,7 +696,8 @@ class RacingScene extends Phaser.Scene {
       this.onStats({
         speed: displaySpeed,
         distance: distanceKm,
-        totalDistance: this.segmentDistanceKm
+        totalDistance: this.segmentDistanceKm,
+        time: this.elapsedTime // Single source of truth for timer
       });
     }
 

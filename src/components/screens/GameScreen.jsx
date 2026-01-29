@@ -158,15 +158,8 @@ function GameScreen() {
   // Pit Stop - NO auto-countdown anymore
   // User must click to proceed to next segment
 
-  // Racing timer - track elapsed time (starts after countdown, stops at 100% progress)
-  useEffect(() => {
-    if (gameState === 'racing' && raceStarted && progress < 100) {
-      const interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 0.1);
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [gameState, raceStarted, progress]);
+  // Racing timer - now synced from Phaser via handleStats callback
+  // Removed redundant React timer - Phaser's elapsedTime is the single source of truth
 
   // Switch vehicle at pit stop
   const handleSwitchVehicle = useCallback(
@@ -187,11 +180,15 @@ function GameScreen() {
     setProgress(progressValue);
   }, []);
 
-  // Stats update from Phaser (speed, distance)
+  // Stats update from Phaser (speed, distance, time)
   const handleStats = useCallback((stats) => {
     setSpeed(stats.speed);
     setDistance(stats.distance);
     setTotalDistance(stats.totalDistance);
+    // Use Phaser's elapsed time as single source of truth
+    if (stats.time !== undefined) {
+      setElapsedTime(stats.time);
+    }
   }, []);
 
   // Obstacle hit callback
@@ -254,8 +251,11 @@ function GameScreen() {
 
   // Play again
   const handlePlayAgain = useCallback(() => {
-    // Reset and start new game
-    window.location.reload();
+    // Reset viewport and scroll position before reload
+    window.scrollTo(0, 0);
+    document.body.style.overflow = '';
+    // Navigate fresh instead of reload to avoid viewport issues
+    window.location.href = window.location.pathname + window.location.search;
   }, []);
 
   // ===== RENDER STATES =====
