@@ -43,7 +43,7 @@ function HomeScreen() {
           <div className="bg-gradient-to-r from-blue-900/50 to-cyan-900/50 rounded-xl p-5 border border-blue-700">
             <h3 className="text-lg font-semibold mb-4 text-center text-blue-200">🏁 Start Your Journey</h3>
             <div className="grid grid-cols-2 gap-3">
-              {DESTINATIONS.map((dest) => (
+              {DESTINATIONS.map((dest, index) => (
                 <button
                   key={dest.id}
                   onClick={() => navigate(`/game?destination=${dest.id}`)}
@@ -58,10 +58,34 @@ function HomeScreen() {
                   </div>
                   <div className="font-bold text-white">{dest.name}</div>
                   <div className="text-xs text-white/70">{dest.game}</div>
+                  <div className="text-xs text-white/60 mt-1">{dest.location}</div>
+                  {/* Shimmer effect */}
+                  <div className="absolute inset-0 shimmer-effect"></div>
                   <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity"></div>
                 </button>
               ))}
             </div>
+
+            {/* Shimmer Animation Styles */}
+            <style>{`
+              @keyframes shimmer {
+                0% {
+                  transform: translateX(-100%);
+                }
+                50%, 100% {
+                  transform: translateX(100%);
+                }
+              }
+              .shimmer-effect {
+                background: linear-gradient(
+                  90deg,
+                  transparent 0%,
+                  rgba(255, 255, 255, 0.4) 50%,
+                  transparent 100%
+                );
+                animation: shimmer 4s ease-in-out infinite;
+              }
+            `}</style>
             <p className="text-center text-xs text-gray-400 mt-3">Tap a destination to race!</p>
           </div>
 

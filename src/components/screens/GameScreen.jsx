@@ -270,38 +270,234 @@ function GameScreen() {
     );
   }
 
-  // City Reveal with countdown
+  // City Reveal with countdown + Racing Energy
   if (gameState === 'city_reveal') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-6">
-        <div className="text-center max-w-md">
-          <p className="text-gray-400 mb-2">Your journey begins in...</p>
-          <div className="text-7xl mb-4 animate-bounce">{startingCity.emoji}</div>
-          <h1 className="text-4xl font-bold mb-2">{startingCity.name}</h1>
-          <p className="text-gray-400 mb-1">{startingCity.region}</p>
-          <p className="text-lg text-cyan-400 mb-8">
-            {startingCity.baseDistance.toLocaleString()} km to Los Angeles
-          </p>
+      <div className="min-h-screen flex flex-col justify-between bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-4 pt-4 pb-6 relative overflow-hidden">
+        {/* Speed Lines Background - 70% opacity */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-70">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-speed-line"
+              style={{
+                top: `${5 + i * 8}%`,
+                left: '-100%',
+                width: '60%',
+                animationDelay: `${i * 0.2}s`,
+                animationDuration: `${1.5 + (i % 3) * 0.5}s`,
+              }}
+            />
+          ))}
+        </div>
 
-          <div className="bg-gray-800/50 rounded-xl p-4 mb-8">
-            <p className="text-sm text-gray-400 mb-2">Destination</p>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-3xl">{destinationInfo?.emoji}</span>
-              <div>
-                <p className="font-bold">{destinationInfo?.name}</p>
-                <p className="text-sm text-gray-400">{destinationInfo?.game}</p>
-              </div>
+        {/* Main Content - Centered */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-md mx-auto relative z-10 py-2">
+          <p className="text-gray-400 mb-3 text-lg">Your journey begins in...</p>
+
+          {/* Start City and Destination with Arrow - Different colors */}
+          <div className="flex items-center justify-center gap-3 mb-5">
+            {/* Start City Card - GREEN theme */}
+            <div className="bg-green-900/40 rounded-xl p-4 border border-green-500/50 w-36 h-36 flex flex-col items-center justify-center animate-card-pulse-green">
+              <div className="text-4xl mb-2">{startingCity.emoji}</div>
+              <h1 className="text-lg font-bold leading-tight">{startingCity.name}</h1>
+              <p className="text-green-300 text-xs">{startingCity.region}</p>
+            </div>
+
+            {/* Arrow */}
+            <div className="text-5xl font-bold text-cyan-400 animate-pulse-arrow">→</div>
+
+            {/* Destination Card - CYAN/BLUE theme */}
+            <div className="bg-cyan-900/40 rounded-xl p-3 border border-cyan-500/50 w-36 h-36 flex flex-col items-center justify-center animate-card-pulse-cyan">
+              <span className="text-3xl block mb-1">{destinationInfo?.emoji}</span>
+              <p className="font-bold text-base leading-tight">{destinationInfo?.name}</p>
+              <p className="text-xs text-cyan-300">{destinationInfo?.game}</p>
+              <p className="text-xs text-cyan-200 mt-1">{destinationInfo?.location}</p>
             </div>
           </div>
 
+          {/* Distance - Prominent */}
+          <p className="text-2xl font-bold text-cyan-400 mb-4">
+            {startingCity.baseDistance.toLocaleString()} km to Los Angeles
+          </p>
+
           {/* Countdown */}
           <div className="text-center">
-            <p className="text-gray-400 mb-2">GET READY!</p>
-            <div className="text-6xl font-bold text-yellow-400 animate-pulse">
+            <p className="text-gray-400 mb-1">GET READY!</p>
+            <div className="text-5xl font-bold text-yellow-400 animate-pulse">
               {countdown > 0 ? countdown : '🏁'}
             </div>
           </div>
         </div>
+
+        {/* F1 Racing Car at Bottom - Shaky Animation */}
+        <div className="relative flex flex-col items-center z-10 mb-48">
+          <svg
+            width="160"
+            height="55"
+            viewBox="0 0 180 60"
+            className="animate-car-shake"
+          >
+            {/* F1 Car */}
+            <g>
+              {/* Rear wing */}
+              <rect x="8" y="12" width="4" height="22" fill="#DC2626" />
+              <rect x="4" y="10" width="12" height="4" fill="#DC2626" />
+
+              {/* Main body */}
+              <path
+                d="M20 34 L25 28 L45 24 L70 22 L100 20 L130 20 L150 24 L160 30 L165 34 L165 40 L20 40 Z"
+                fill="#DC2626"
+              />
+
+              {/* Cockpit */}
+              <path
+                d="M75 22 L95 20 L100 20 L100 28 L80 30 L75 28 Z"
+                fill="#1F2937"
+              />
+
+              {/* Driver helmet */}
+              <ellipse cx="88" cy="22" rx="6" ry="5" fill="#3B82F6" />
+
+              {/* Front nose */}
+              <path
+                d="M150 26 L170 30 L175 34 L175 38 L165 38 L160 34 L150 30 Z"
+                fill="#DC2626"
+              />
+
+              {/* Side pods */}
+              <path
+                d="M50 28 L70 26 L70 38 L50 38 Z"
+                fill="#B91C1C"
+              />
+              <path
+                d="M110 26 L130 28 L130 38 L110 38 Z"
+                fill="#B91C1C"
+              />
+
+              {/* Front wing */}
+              <rect x="160" y="38" width="18" height="3" fill="#DC2626" />
+              <rect x="165" y="34" width="12" height="4" fill="#1F2937" />
+
+              {/* Rear diffuser */}
+              <rect x="15" y="38" width="15" height="3" fill="#1F2937" />
+
+              {/* Wheels */}
+              {/* Rear left wheel */}
+              <ellipse cx="35" cy="40" rx="12" ry="10" fill="#1F2937" />
+              <ellipse cx="35" cy="40" rx="8" ry="7" fill="#374151" />
+              <ellipse cx="35" cy="40" rx="3" ry="2.5" fill="#EF4444" />
+
+              {/* Front left wheel */}
+              <ellipse cx="145" cy="40" rx="10" ry="9" fill="#1F2937" />
+              <ellipse cx="145" cy="40" rx="6" ry="6" fill="#374151" />
+              <ellipse cx="145" cy="40" rx="2" ry="2" fill="#EF4444" />
+
+              {/* Accents */}
+              <path d="M60 30 L90 28 L90 32 L60 34 Z" fill="#FBBF24" />
+              <circle cx="170" cy="36" r="2" fill="#FBBF24" />
+            </g>
+          </svg>
+          {/* Road line */}
+          <div className="w-44 h-[3px] bg-gradient-to-r from-transparent via-gray-500 to-transparent mt-1" />
+        </div>
+
+        {/* Animation Styles */}
+        <style>{`
+          @keyframes speed-line {
+            0% {
+              transform: translateX(0);
+              opacity: 0;
+            }
+            5% {
+              opacity: 1;
+            }
+            95% {
+              opacity: 1;
+            }
+            100% {
+              transform: translateX(500%);
+              opacity: 0;
+            }
+          }
+          .animate-speed-line {
+            animation: speed-line linear infinite;
+          }
+          @keyframes car-shake {
+            0%, 100% {
+              transform: translateY(0) translateX(0);
+            }
+            10% {
+              transform: translateY(-2px) translateX(2px);
+            }
+            20% {
+              transform: translateY(0) translateX(-2px);
+            }
+            30% {
+              transform: translateY(-3px) translateX(0);
+            }
+            40% {
+              transform: translateY(0) translateX(2px);
+            }
+            50% {
+              transform: translateY(-2px) translateX(-2px);
+            }
+            60% {
+              transform: translateY(0) translateX(0);
+            }
+            70% {
+              transform: translateY(-2px) translateX(2px);
+            }
+            80% {
+              transform: translateY(-3px) translateX(-2px);
+            }
+            90% {
+              transform: translateY(0) translateX(0);
+            }
+          }
+          .animate-car-shake {
+            animation: car-shake 0.25s ease-in-out infinite;
+          }
+          @keyframes pulse-arrow {
+            0%, 100% {
+              opacity: 1;
+              transform: translateX(0);
+            }
+            50% {
+              opacity: 0.6;
+              transform: translateX(5px);
+            }
+          }
+          .animate-pulse-arrow {
+            animation: pulse-arrow 1s ease-in-out infinite;
+          }
+          @keyframes card-pulse-green {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+              transform: scale(1);
+            }
+            50% {
+              box-shadow: 0 0 20px 4px rgba(34, 197, 94, 0.4);
+              transform: scale(1.02);
+            }
+          }
+          .animate-card-pulse-green {
+            animation: card-pulse-green 2s ease-in-out infinite;
+          }
+          @keyframes card-pulse-cyan {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+              transform: scale(1);
+            }
+            50% {
+              box-shadow: 0 0 20px 4px rgba(34, 211, 238, 0.4);
+              transform: scale(1.02);
+            }
+          }
+          .animate-card-pulse-cyan {
+            animation: card-pulse-cyan 2s ease-in-out infinite;
+          }
+        `}</style>
       </div>
     );
   }

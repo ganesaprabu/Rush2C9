@@ -10,7 +10,7 @@ export const STARTING_CITIES = [
   {
     id: 'tokyo',
     name: 'Tokyo',
-    region: 'Asia',
+    region: '🇯🇵 Japan',
     emoji: '🗼',
     baseDistance: 8800,
     waypoints: ['Honolulu', 'San Francisco', 'Las Vegas']
@@ -18,7 +18,7 @@ export const STARTING_CITIES = [
   {
     id: 'seoul',
     name: 'Seoul',
-    region: 'Asia',
+    region: '🇰🇷 South Korea',
     emoji: '🏯',
     baseDistance: 9500,
     waypoints: ['Shanghai', 'Honolulu', 'Phoenix']
@@ -26,15 +26,15 @@ export const STARTING_CITIES = [
   {
     id: 'chennai',
     name: 'Chennai',
-    region: 'Asia',
-    emoji: '🕌',
+    region: '🇮🇳 India',
+    emoji: '🛕',
     baseDistance: 14500,
     waypoints: ['Dubai', 'London', 'New York']
   },
   {
     id: 'dubai',
     name: 'Dubai',
-    region: 'Middle East',
+    region: '🇦🇪 UAE',
     emoji: '🏗️',
     baseDistance: 13400,
     waypoints: ['Istanbul', 'Paris', 'Chicago']
@@ -42,7 +42,7 @@ export const STARTING_CITIES = [
   {
     id: 'sydney',
     name: 'Sydney',
-    region: 'Oceania',
+    region: '🇦🇺 Australia',
     emoji: '🦘',
     baseDistance: 12000,
     waypoints: ['Auckland', 'Fiji', 'Honolulu']
@@ -50,7 +50,7 @@ export const STARTING_CITIES = [
   {
     id: 'london',
     name: 'London',
-    region: 'Europe',
+    region: '🇬🇧 United Kingdom',
     emoji: '🎡',
     baseDistance: 8800,
     waypoints: ['Dublin', 'Reykjavik', 'Denver']
@@ -58,7 +58,7 @@ export const STARTING_CITIES = [
   {
     id: 'paris',
     name: 'Paris',
-    region: 'Europe',
+    region: '🇫🇷 France',
     emoji: '🗼',
     baseDistance: 9100,
     waypoints: ['Madrid', 'Lisbon', 'Miami']
@@ -66,7 +66,7 @@ export const STARTING_CITIES = [
   {
     id: 'berlin',
     name: 'Berlin',
-    region: 'Europe',
+    region: '🇩🇪 Germany',
     emoji: '🏛️',
     baseDistance: 9300,
     waypoints: ['Amsterdam', 'Toronto', 'Detroit']
@@ -74,7 +74,7 @@ export const STARTING_CITIES = [
   {
     id: 'sao_paulo',
     name: 'São Paulo',
-    region: 'South America',
+    region: '🇧🇷 Brazil',
     emoji: '🌴',
     baseDistance: 9900,
     waypoints: ['Lima', 'Panama City', 'Mexico City']
@@ -82,7 +82,7 @@ export const STARTING_CITIES = [
   {
     id: 'toronto',
     name: 'Toronto',
-    region: 'North America',
+    region: '🇨🇦 Canada',
     emoji: '🍁',
     baseDistance: 3500,
     waypoints: ['Chicago', 'Denver', 'Las Vegas']
@@ -97,7 +97,7 @@ export const DESTINATIONS = [
   {
     id: 'lcs',
     name: 'LCS Arena',
-    location: 'Los Angeles, USA',
+    location: '🇺🇸 Los Angeles',
     game: 'League of Legends',
     emoji: '🏟️',
     color: '#0066CC' // Cloud9 blue
@@ -105,7 +105,7 @@ export const DESTINATIONS = [
   {
     id: 'vct',
     name: 'VCT Arena',
-    location: 'Los Angeles, USA',
+    location: '🇺🇸 Los Angeles',
     game: 'VALORANT',
     emoji: '🎯',
     color: '#FF4655' // VALORANT red
