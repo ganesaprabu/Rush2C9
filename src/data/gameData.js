@@ -13,7 +13,7 @@ export const STARTING_CITIES = [
     region: '🇯🇵 Japan',
     emoji: '🗼',
     baseDistance: 8800,
-    waypoints: ['Honolulu', 'San Francisco', 'Las Vegas']
+    waypoints: ['Honolulu', 'San Francisco']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'seoul',
@@ -21,7 +21,7 @@ export const STARTING_CITIES = [
     region: '🇰🇷 South Korea',
     emoji: '🏯',
     baseDistance: 9500,
-    waypoints: ['Shanghai', 'Honolulu', 'Phoenix']
+    waypoints: ['Shanghai', 'Honolulu']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'chennai',
@@ -29,7 +29,7 @@ export const STARTING_CITIES = [
     region: '🇮🇳 India',
     emoji: '🛕',
     baseDistance: 14500,
-    waypoints: ['Dubai', 'London', 'New York']
+    waypoints: ['Dubai', 'New York']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'dubai',
@@ -37,7 +37,7 @@ export const STARTING_CITIES = [
     region: '🇦🇪 UAE',
     emoji: '🏗️',
     baseDistance: 13400,
-    waypoints: ['Istanbul', 'Paris', 'Chicago']
+    waypoints: ['Istanbul', 'Chicago']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'sydney',
@@ -45,7 +45,7 @@ export const STARTING_CITIES = [
     region: '🇦🇺 Australia',
     emoji: '🦘',
     baseDistance: 12000,
-    waypoints: ['Auckland', 'Fiji', 'Honolulu']
+    waypoints: ['Auckland', 'Honolulu']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'london',
@@ -53,7 +53,7 @@ export const STARTING_CITIES = [
     region: '🇬🇧 United Kingdom',
     emoji: '🎡',
     baseDistance: 8800,
-    waypoints: ['Dublin', 'Reykjavik', 'Denver']
+    waypoints: ['Dublin', 'Reykjavik']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'paris',
@@ -61,7 +61,7 @@ export const STARTING_CITIES = [
     region: '🇫🇷 France',
     emoji: '🗼',
     baseDistance: 9100,
-    waypoints: ['Madrid', 'Lisbon', 'Miami']
+    waypoints: ['Madrid', 'Miami']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'berlin',
@@ -69,7 +69,7 @@ export const STARTING_CITIES = [
     region: '🇩🇪 Germany',
     emoji: '🏛️',
     baseDistance: 9300,
-    waypoints: ['Amsterdam', 'Toronto', 'Detroit']
+    waypoints: ['Amsterdam', 'Toronto']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'sao_paulo',
@@ -77,7 +77,7 @@ export const STARTING_CITIES = [
     region: '🇧🇷 Brazil',
     emoji: '🌴',
     baseDistance: 9900,
-    waypoints: ['Lima', 'Panama City', 'Mexico City']
+    waypoints: ['Lima', 'Mexico City']  // 2 waypoints, Seg 3 ends at LA
   },
   {
     id: 'toronto',
@@ -85,7 +85,7 @@ export const STARTING_CITIES = [
     region: '🇨🇦 Canada',
     emoji: '🍁',
     baseDistance: 3500,
-    waypoints: ['Chicago', 'Denver', 'Las Vegas']
+    waypoints: ['Chicago', 'Denver']  // 2 waypoints, Seg 3 ends at LA
   },
 ];
 
@@ -539,9 +539,9 @@ export const generateRouteSegments = (startCityId, difficulty = 'moderate') => {
   if (!city) return [];
 
   const diff = ROUTE_DIFFICULTIES[difficulty];
-  // Only use first 3 waypoints (waypoints array has 3 cities, last one leads to LA)
-  // This ensures exactly 3 segments: City → WP1 → WP2 → WP3/LA
-  const waypoints = city.waypoints.slice(0, 3);
+  // 2 waypoints + Los Angeles as final destination = 3 segments
+  // Route: City → WP1 → WP2 → Los Angeles
+  const waypoints = [...city.waypoints, 'Los Angeles'];
 
   return waypoints.map((waypoint, index) => {
     // All segments use highway for consistent experience

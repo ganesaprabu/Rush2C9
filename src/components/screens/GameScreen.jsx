@@ -113,8 +113,12 @@ function GameScreen() {
   // Called when a racing segment completes
   const handleSegmentComplete = useCallback(
     (time, obstaclesHit = 0, boostsUsed = 0, boostsAvailable = 0) => {
-      // Save segment result
-      setSegmentResults((prev) => [...prev, { time, obstaclesHit, boostsUsed, boostsAvailable }]);
+      // Save segment result at the correct index (handles skip scenario)
+      setSegmentResults((prev) => {
+        const newResults = [...prev];
+        newResults[currentSegment] = { time, obstaclesHit, boostsUsed, boostsAvailable };
+        return newResults;
+      });
       setTotalTime((prev) => prev + time);
       setTotalBoostsUsed((prev) => prev + boostsUsed);
       setTotalBoostsAvailable((prev) => prev + boostsAvailable);
@@ -128,7 +132,7 @@ function GameScreen() {
         setShowContinueButton(true);
       }, 3000);
     },
-    []
+    [currentSegment]
   );
 
   // ===== STATE TRANSITIONS =====
@@ -854,35 +858,41 @@ function GameScreen() {
                 </div>
               </div>
 
-              {/* Waypoints */}
-              {segments.map((segment, index) => (
-                <div key={index}>
-                  <div className="ml-5 border-l-2 border-dashed border-gray-600 h-6" />
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg">
-                      {ROAD_TYPES[segment.roadType]?.emoji}
-                    </div>
-                    <div>
-                      <p className="font-semibold">{segment.to}</p>
-                      <p className="text-xs text-gray-400">
-                        {segmentResults[index]?.time?.toFixed(1)}s
-                      </p>
+              {/* Waypoints - Last one (Los Angeles) shows as destination */}
+              {segments.map((segment, index) => {
+                const isLastSegment = index === segments.length - 1;
+                const isSkipped = !segmentResults[index];
+
+                return (
+                  <div key={index}>
+                    <div className="ml-5 border-l-2 border-dashed border-gray-600 h-6" />
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                        isSkipped
+                          ? 'bg-purple-900/50 border border-purple-500/50'
+                          : isLastSegment
+                            ? 'bg-blue-600'
+                            : 'bg-gray-700'
+                      }`}>
+                        {isSkipped ? '⏭️' : isLastSegment ? destinationInfo?.emoji : ROAD_TYPES[segment.roadType]?.emoji}
+                      </div>
+                      <div>
+                        <p className="font-semibold">
+                          {isLastSegment ? destinationInfo?.name : segment.to}
+                        </p>
+                        <p className={`text-xs ${isSkipped ? 'text-purple-400' : 'text-gray-400'}`}>
+                          {isSkipped
+                            ? 'Skipped'
+                            : isLastSegment
+                              ? `Destination 🏁 • ${segmentResults[index].time.toFixed(1)}s`
+                              : `${segmentResults[index].time.toFixed(1)}s`
+                          }
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-
-              {/* Destination */}
-              <div className="ml-5 border-l-2 border-dashed border-gray-600 h-6" />
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-lg">
-                  {destinationInfo?.emoji}
-                </div>
-                <div>
-                  <p className="font-semibold">{destinationInfo?.name}</p>
-                  <p className="text-xs text-gray-400">Destination 🏁</p>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
 
