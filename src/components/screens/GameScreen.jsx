@@ -796,11 +796,11 @@ function GameScreen() {
     const hitsPenalty = totalObstaclesHit * GAME_CONFIG.hitPenalty;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-6">
+      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-4 pt-3">
         <div className="max-w-lg mx-auto">
           {/* Journey Complete */}
-          <div className="text-center mb-4">
-            <div className="text-4xl mb-2">🏁</div>
+          <div className="text-center mb-3">
+            <div className="text-3xl mb-1">🏁</div>
             <h1 className="text-2xl font-bold">JOURNEY COMPLETE!</h1>
             <p className="text-gray-400">
               {startingCity.name} → {destinationInfo?.name}
@@ -808,7 +808,7 @@ function GameScreen() {
           </div>
 
           {/* Score - Vibrant gold/amber gradient */}
-          <div className="bg-gradient-to-r from-amber-600/40 to-yellow-500/40 rounded-xl p-5 mb-4 text-center border-2 border-yellow-500/60 shadow-lg shadow-yellow-900/20">
+          <div className="bg-gradient-to-r from-amber-600/40 to-yellow-500/40 rounded-xl p-4 mb-3 text-center border-2 border-yellow-500/60 shadow-lg shadow-yellow-900/20">
             <p className="text-sm text-yellow-200/80 mb-1 font-medium">YOUR SCORE</p>
             <p className="text-5xl font-bold text-yellow-400 drop-shadow-lg">
               <span className="trophy-shake inline-block">🏆</span> {score}
@@ -816,7 +816,7 @@ function GameScreen() {
           </div>
 
           {/* Action buttons - Side by side with shimmer effect (like destination cards) */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <button
               onClick={handlePlayAgain}
               className="relative overflow-hidden py-4 bg-gradient-to-br from-green-600 to-emerald-700 hover:from-green-500 hover:to-emerald-600 rounded-xl font-bold text-base transition-all hover:scale-105 active:scale-95 border-2 border-green-400 shadow-lg"
