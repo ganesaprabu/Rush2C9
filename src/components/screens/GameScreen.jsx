@@ -11,7 +11,8 @@ import {
   generateRouteSegments,
   getSpeedRating
 } from '../../data/gameData';
-import { updatePlayerScore, getPlayer } from '../../services/playerService';
+// Player service will be replaced with Firebase
+// import { updatePlayerScore, getPlayer } from '../../services/playerService';
 import PhaserGame from '../game/PhaserGame';
 import GameHUD from '../game/GameHUD';
 import ControlButtons from '../game/ControlButtons';
@@ -246,21 +247,21 @@ function GameScreen() {
     return Math.round(Math.max(0, basePoints + timeBonus + creditBonus - hitsPenalty));
   }, [credits, totalTime, segmentResults]);
 
-  // Save score and return home
+  // Save score and return to name entry
   const handleFinish = useCallback(() => {
-    const score = calculateScore();
-    updatePlayerScore(score, destination);
-    navigate('/home');
-  }, [calculateScore, destination, navigate]);
-
-  // Play again
-  const handlePlayAgain = useCallback(() => {
-    // Reset viewport and scroll position before reload
+    // TODO: Save score to Firebase when integrated
+    // const score = calculateScore();
     window.scrollTo(0, 0);
     document.body.style.overflow = '';
-    // Navigate fresh instead of reload to avoid viewport issues
-    window.location.href = window.location.pathname + window.location.search;
-  }, []);
+    navigate('/name-entry');
+  }, [navigate]);
+
+  // Play again - go back to name entry
+  const handlePlayAgain = useCallback(() => {
+    window.scrollTo(0, 0);
+    document.body.style.overflow = '';
+    navigate('/name-entry');
+  }, [navigate]);
 
   // ===== RENDER STATES =====
 
@@ -521,7 +522,7 @@ function GameScreen() {
             roadType={segment?.roadType || 'highway'}
             credits={credits}
             segmentIndex={currentSegment}
-            playerName={getPlayer()?.firstName || 'RACER'}
+            playerName={localStorage.getItem('rush2c9_playerName') || 'RACER'}
             onProgress={handleProgress}
             onStats={handleStats}
             onObstacleHit={handleObstacleHit}
@@ -796,25 +797,170 @@ function GameScreen() {
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-6">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-lg mx-auto">
           {/* Journey Complete */}
-          <div className="text-center mb-6">
-            <div className="text-5xl mb-2">🏁</div>
+          <div className="text-center mb-4">
+            <div className="text-4xl mb-2">🏁</div>
             <h1 className="text-2xl font-bold">JOURNEY COMPLETE!</h1>
             <p className="text-gray-400">
               {startingCity.name} → {destinationInfo?.name}
             </p>
           </div>
 
-          {/* Score */}
-          <div className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 rounded-xl p-6 mb-6 text-center border border-yellow-700">
-            <p className="text-sm text-gray-400 mb-2">YOUR SCORE</p>
-            <p className="text-5xl font-bold text-yellow-400">⭐ {score}</p>
+          {/* Score - Vibrant gold/amber gradient */}
+          <div className="bg-gradient-to-r from-amber-600/40 to-yellow-500/40 rounded-xl p-5 mb-4 text-center border-2 border-yellow-500/60 shadow-lg shadow-yellow-900/20">
+            <p className="text-sm text-yellow-200/80 mb-1 font-medium">YOUR SCORE</p>
+            <p className="text-5xl font-bold text-yellow-400 drop-shadow-lg">
+              <span className="trophy-shake inline-block">🏆</span> {score}
+            </p>
           </div>
 
-          {/* Score breakdown */}
-          <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
-            <p className="font-semibold mb-3">Score Breakdown</p>
+          {/* Action buttons - Side by side with shimmer effect (like destination cards) */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <button
+              onClick={handlePlayAgain}
+              className="relative overflow-hidden py-4 bg-gradient-to-br from-green-600 to-emerald-700 hover:from-green-500 hover:to-emerald-600 rounded-xl font-bold text-base transition-all hover:scale-105 active:scale-95 border-2 border-green-400 shadow-lg"
+            >
+              <span className="relative z-10">🔄 Play Again</span>
+              <div className="absolute inset-0 shimmer-effect pointer-events-none"></div>
+            </button>
+            <button
+              onClick={() => navigate('/leaderboard')}
+              className="relative overflow-hidden py-4 bg-gradient-to-br from-blue-600 to-cyan-700 hover:from-blue-500 hover:to-cyan-600 rounded-xl font-bold text-base transition-all hover:scale-105 active:scale-95 border-2 border-blue-400 shadow-lg"
+            >
+              <span className="relative z-10">🏆 Leaderboard</span>
+              <div className="absolute inset-0 shimmer-effect pointer-events-none"></div>
+            </button>
+          </div>
+
+          {/* Shimmer and trophy shake animations */}
+          <style>{`
+            @keyframes shimmer {
+              0% {
+                transform: translateX(-100%);
+              }
+              50%, 100% {
+                transform: translateX(100%);
+              }
+            }
+            .shimmer-effect {
+              background: linear-gradient(
+                90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 100%
+              );
+              animation: shimmer 2s ease-in-out infinite;
+            }
+            @keyframes trophy-shake {
+              0%, 100% {
+                transform: rotate(0deg);
+              }
+              15% {
+                transform: rotate(-12deg);
+              }
+              30% {
+                transform: rotate(10deg);
+              }
+              45% {
+                transform: rotate(-8deg);
+              }
+              60% {
+                transform: rotate(6deg);
+              }
+              75% {
+                transform: rotate(-4deg);
+              }
+              90% {
+                transform: rotate(2deg);
+              }
+            }
+            .trophy-shake {
+              animation: trophy-shake 1.5s ease-in-out infinite;
+            }
+          `}</style>
+
+          {/* Stats - Single line with pipe separators - Mobile friendly */}
+          <div className="bg-gray-800/50 rounded-xl p-3 mb-4">
+            <div className="flex justify-center items-center">
+              <div className="text-center px-2">
+                <span className="font-bold text-base text-cyan-400">{totalTime.toFixed(1)}s</span>
+                <span className="text-gray-400 text-xs ml-1">Time</span>
+              </div>
+              <span className="text-gray-600 text-base mx-1">|</span>
+              <div className="text-center px-2">
+                <span className="font-bold text-base text-red-400">{totalObstaclesHit}</span>
+                <span className="text-gray-400 text-xs ml-1">Hits</span>
+              </div>
+              <span className="text-gray-600 text-base mx-1">|</span>
+              <div className="text-center px-2">
+                <span className="font-bold text-base">{startingCity.baseDistance.toLocaleString()}</span>
+                <span className="text-gray-400 text-xs ml-1">km</span>
+              </div>
+              <span className="text-gray-600 text-base mx-1">|</span>
+              <div className="text-center px-2">
+                <span className="font-bold text-base text-yellow-400">{totalBoostsUsed}/{totalBoostsAvailable}</span>
+                <span className="text-yellow-400 text-xs ml-1">⚡</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Journey Map */}
+          <div className="bg-gray-800/50 rounded-xl p-4 mb-4">
+            <p className="font-semibold mb-3 text-center">🗺️ Your Journey</p>
+            <div className="space-y-2">
+              {/* Starting city */}
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-base">
+                  {startingCity.emoji}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{startingCity.name}</p>
+                  <p className="text-xs text-gray-400">Start</p>
+                </div>
+              </div>
+
+              {/* Waypoints - Last one (Los Angeles) shows as destination */}
+              {segments.map((segment, index) => {
+                const isLastSegment = index === segments.length - 1;
+                const isSkipped = !segmentResults[index];
+
+                return (
+                  <div key={index}>
+                    <div className="ml-4 border-l-2 border-dashed border-gray-600 h-4" />
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base ${
+                        isSkipped
+                          ? 'bg-purple-900/50 border border-purple-500/50'
+                          : isLastSegment
+                            ? 'bg-blue-600'
+                            : 'bg-gray-700'
+                      }`}>
+                        {isSkipped ? '⏭️' : isLastSegment ? destinationInfo?.emoji : ROAD_TYPES[segment.roadType]?.emoji}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {isLastSegment ? destinationInfo?.name : segment.to}
+                        </p>
+                        <p className={`text-xs ${isSkipped ? 'text-purple-400' : 'text-gray-400'}`}>
+                          {isSkipped
+                            ? 'Skipped'
+                            : isLastSegment
+                              ? `Destination 🏁 • ${segmentResults[index].time.toFixed(1)}s`
+                              : `${segmentResults[index].time.toFixed(1)}s`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Score Breakdown - At the bottom for detail lovers */}
+          <div className="bg-gray-800/50 rounded-xl p-4">
+            <p className="font-semibold mb-3 text-center">📊 Score Breakdown</p>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Base Points</span>
@@ -842,97 +988,6 @@ function GameScreen() {
               </div>
             </div>
           </div>
-
-          {/* Journey Map */}
-          <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
-            <p className="font-semibold mb-4 text-center">🗺️ Your Journey</p>
-            <div className="space-y-3">
-              {/* Starting city */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-lg">
-                  {startingCity.emoji}
-                </div>
-                <div>
-                  <p className="font-semibold">{startingCity.name}</p>
-                  <p className="text-xs text-gray-400">Start</p>
-                </div>
-              </div>
-
-              {/* Waypoints - Last one (Los Angeles) shows as destination */}
-              {segments.map((segment, index) => {
-                const isLastSegment = index === segments.length - 1;
-                const isSkipped = !segmentResults[index];
-
-                return (
-                  <div key={index}>
-                    <div className="ml-5 border-l-2 border-dashed border-gray-600 h-6" />
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
-                        isSkipped
-                          ? 'bg-purple-900/50 border border-purple-500/50'
-                          : isLastSegment
-                            ? 'bg-blue-600'
-                            : 'bg-gray-700'
-                      }`}>
-                        {isSkipped ? '⏭️' : isLastSegment ? destinationInfo?.emoji : ROAD_TYPES[segment.roadType]?.emoji}
-                      </div>
-                      <div>
-                        <p className="font-semibold">
-                          {isLastSegment ? destinationInfo?.name : segment.to}
-                        </p>
-                        <p className={`text-xs ${isSkipped ? 'text-purple-400' : 'text-gray-400'}`}>
-                          {isSkipped
-                            ? 'Skipped'
-                            : isLastSegment
-                              ? `Destination 🏁 • ${segmentResults[index].time.toFixed(1)}s`
-                              : `${segmentResults[index].time.toFixed(1)}s`
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 mb-4 text-center">
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-lg font-bold">{totalTime.toFixed(1)}s</p>
-              <p className="text-xs text-gray-400">Total Time</p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-lg font-bold">{totalObstaclesHit}</p>
-              <p className="text-xs text-gray-400">Obstacles Hit</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 mb-6 text-center">
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-lg font-bold">{startingCity.baseDistance.toLocaleString()}</p>
-              <p className="text-xs text-gray-400">km Traveled</p>
-            </div>
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <p className="text-lg font-bold text-cyan-400">{totalBoostsUsed} / {totalBoostsAvailable}</p>
-              <p className="text-xs text-gray-400">Boosts Used</p>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="space-y-3">
-            <button
-              onClick={handlePlayAgain}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-lg transition-all"
-            >
-              🔄 Play Again
-            </button>
-            <button
-              onClick={handleFinish}
-              className="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold transition-all"
-            >
-              🏠 Return Home
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -943,10 +998,10 @@ function GameScreen() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white p-6">
       <p>Unknown game state: {gameState}</p>
       <button
-        onClick={() => navigate('/home')}
+        onClick={() => navigate('/name-entry')}
         className="mt-4 px-6 py-2 bg-blue-600 rounded-lg"
       >
-        Return Home
+        Play Again
       </button>
     </div>
   );

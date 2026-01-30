@@ -1,19 +1,13 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hasPlayer } from '../../services/playerService';
 
 function SplashScreen() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Auto-navigate after 2 seconds
-    // If player exists → home, otherwise → registration
+    // Auto-navigate to name entry after 2 seconds
     const timer = setTimeout(() => {
-      if (hasPlayer()) {
-        navigate('/home');
-      } else {
-        navigate('/register');
-      }
+      navigate('/name-entry');
     }, 2000);
 
     return () => clearTimeout(timer);
