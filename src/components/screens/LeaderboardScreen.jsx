@@ -142,23 +142,23 @@ function LeaderboardScreen() {
 
         {/* Top 3 Podium - only show when not searching */}
         {!loading && !error && top3.length >= 3 && !searchQuery && (
-          <div className="flex justify-center items-end gap-2 mb-4">
+          <div className="flex justify-center items-end gap-3 mb-4">
             {/* 2nd place */}
             <div className="text-center">
               <div className="text-4xl mb-2">🥈</div>
-              <div className="bg-gray-700 rounded-t-lg px-4 py-6">
-                <div className="font-semibold text-sm truncate max-w-[80px]">{top3[1]?.playerName}</div>
-                <div className="text-yellow-400">{top3[1]?.totalScore}</div>
+              <div className="bg-gray-700 rounded-t-lg px-6 py-6 min-w-[110px]">
+                <div className="font-semibold text-sm truncate max-w-[100px]">{top3[1]?.playerName}</div>
+                <div className="text-yellow-400 text-lg">{top3[1]?.totalScore}</div>
                 <div className="text-cyan-400 text-xs">({top3[1]?.playCount || 1} plays)</div>
-                <div className="text-xs mt-1">{top3[1]?.lastDestination === 'lcs' ? '🎮' : '🎯'}</div>
+                <div className="text-sm mt-1">{top3[1]?.lastDestination === 'lcs' ? '🎮' : '🎯'}</div>
               </div>
             </div>
             {/* 1st place */}
             <div className="text-center">
               <div className="text-5xl mb-2">🥇</div>
-              <div className="bg-yellow-600/30 border border-yellow-500 rounded-t-lg px-6 py-8">
-                <div className="font-bold truncate max-w-[100px]">{top3[0]?.playerName}</div>
-                <div className="text-yellow-400 text-xl">{top3[0]?.totalScore}</div>
+              <div className="bg-yellow-600/30 border border-yellow-500 rounded-t-lg px-8 py-8 min-w-[130px]">
+                <div className="font-bold text-lg truncate max-w-[120px]">{top3[0]?.playerName}</div>
+                <div className="text-yellow-400 text-2xl">{top3[0]?.totalScore}</div>
                 <div className="text-cyan-400 text-xs">({top3[0]?.playCount || 1} plays)</div>
                 <div className="text-sm mt-1">{top3[0]?.lastDestination === 'lcs' ? '🎮' : '🎯'}</div>
               </div>
@@ -166,11 +166,11 @@ function LeaderboardScreen() {
             {/* 3rd place */}
             <div className="text-center">
               <div className="text-4xl mb-2">🥉</div>
-              <div className="bg-gray-700 rounded-t-lg px-4 py-4">
-                <div className="font-semibold text-sm truncate max-w-[80px]">{top3[2]?.playerName}</div>
-                <div className="text-yellow-400">{top3[2]?.totalScore}</div>
+              <div className="bg-gray-700 rounded-t-lg px-6 py-4 min-w-[110px]">
+                <div className="font-semibold text-sm truncate max-w-[100px]">{top3[2]?.playerName}</div>
+                <div className="text-yellow-400 text-lg">{top3[2]?.totalScore}</div>
                 <div className="text-cyan-400 text-xs">({top3[2]?.playCount || 1} plays)</div>
-                <div className="text-xs mt-1">{top3[2]?.lastDestination === 'lcs' ? '🎮' : '🎯'}</div>
+                <div className="text-sm mt-1">{top3[2]?.lastDestination === 'lcs' ? '🎮' : '🎯'}</div>
               </div>
             </div>
           </div>
