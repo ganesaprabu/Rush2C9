@@ -11,8 +11,7 @@ import {
   generateRouteSegments,
   getSpeedRating
 } from '../../data/gameData';
-// Player service will be replaced with Firebase
-// import { updatePlayerScore, getPlayer } from '../../services/playerService';
+import { saveScore } from '../../firebase/playerService';
 import PhaserGame from '../game/PhaserGame';
 import GameHUD from '../game/GameHUD';
 import ControlButtons from '../game/ControlButtons';
@@ -247,10 +246,21 @@ function GameScreen() {
     return Math.round(Math.max(0, basePoints + timeBonus + creditBonus - hitsPenalty));
   }, [credits, totalTime, segmentResults]);
 
+  // Save score to Firebase when reaching results (fire-and-forget)
+  useEffect(() => {
+    if (gameState === 'results') {
+      const playerName = localStorage.getItem('rush2c9_playerName') || 'Anonymous';
+      const score = calculateScore();
+
+      // Fire-and-forget: don't await, don't block
+      saveScore(playerName, score, destination).catch(() => {
+        // Silent failure - game continues normally
+      });
+    }
+  }, [gameState, calculateScore, destination]);
+
   // Save score and return to name entry
   const handleFinish = useCallback(() => {
-    // TODO: Save score to Firebase when integrated
-    // const score = calculateScore();
     window.scrollTo(0, 0);
     document.body.style.overflow = '';
     navigate('/name-entry');

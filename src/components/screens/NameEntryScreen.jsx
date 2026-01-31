@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DESTINATIONS } from '../../data/gameData';
+import { getPlayerId, getFactionStats } from '../../firebase/playerService';
 
 /**
  * NameEntryScreen - Simplified entry point for the game
@@ -9,8 +10,8 @@ import { DESTINATIONS } from '../../data/gameData';
  * - Name input (single field)
  * - Destination selection (LCS / VCT)
  * - Start Race button
- * - Faction War progress bar
- * - Generates UUID for anonymous player tracking
+ * - Faction War progress bar (real data from Firebase)
+ * - Uses persistent UUID for player tracking
  */
 function NameEntryScreen() {
   const navigate = useNavigate();
@@ -19,49 +20,49 @@ function NameEntryScreen() {
   const [playerName, setPlayerName] = useState('');
   const [selectedDestination, setSelectedDestination] = useState(null);
 
-  // Faction War mock data (will be replaced with Firebase later)
-  const [factionStats] = useState({ lcs: 52, vct: 48 });
+  // Faction War stats from Firebase
+  const [factionStats, setFactionStats] = useState({ lcs: 50, vct: 50 });
 
-  // Pre-fill name if returning player
+  // Set page title
+  useEffect(() => {
+    document.title = 'Rush2C9 - Race to the Arena';
+  }, []);
+
+  // Pre-fill name if returning player, and fetch faction stats
   useEffect(() => {
     const savedName = localStorage.getItem('rush2c9_playerName');
     if (savedName) {
       setPlayerName(savedName);
     }
+
+    // Fetch real faction stats (non-blocking)
+    getFactionStats().then(stats => {
+      setFactionStats(stats);
+    });
   }, []);
 
-  // Handle name input - uppercase, alpha only
+  // Handle name input - uppercase, alphanumeric only (A-Z, 0-9), max 9 chars
   const handleNameChange = (e) => {
-    const value = e.target.value.toUpperCase().replace(/[^A-Z\s]/g, '');
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9);
     setPlayerName(value);
   };
 
   // Check if form is valid
   const isFormValid = playerName.trim().length >= 2 && selectedDestination !== null;
 
-  // Generate UUID (with fallback for older browsers)
-  const generateUUID = () => {
-    if (crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    // Fallback UUID generator
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  };
-
   // Handle Start Race
   const handleStartRace = () => {
     if (!isFormValid) return;
 
-    // Generate UUID for this session
-    const odorless = generateUUID();
+    const trimmedName = playerName.trim();
+
+    // Get or create player ID based on name
+    // Same name = same UUID, different name = new UUID
+    const playerId = getPlayerId(trimmedName);
 
     // Save to localStorage
-    localStorage.setItem('rush2c9_odorless', odorless);
-    localStorage.setItem('rush2c9_playerName', playerName.trim());
+    localStorage.setItem('rush2c9_playerId', playerId);
+    localStorage.setItem('rush2c9_playerName', trimmedName);
     localStorage.setItem('rush2c9_destination', selectedDestination);
 
     // Navigate to game
@@ -82,13 +83,13 @@ function NameEntryScreen() {
 
         {/* Name Input */}
         <div className="mb-6">
-          <label className="block text-gray-400 text-sm mb-2">What's your name?</label>
+          <label className="block text-gray-400 text-sm mb-2">What's your name? (max 9 chars)</label>
           <input
             type="text"
             value={playerName}
             onChange={handleNameChange}
-            placeholder="ENTER YOUR NAME..."
-            maxLength={20}
+            placeholder="YOURNAME"
+            maxLength={9}
             className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-lg uppercase tracking-wide"
           />
         </div>

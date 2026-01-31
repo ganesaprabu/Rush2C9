@@ -3,11 +3,7 @@ import SplashScreen from './components/screens/SplashScreen';
 import NameEntryScreen from './components/screens/NameEntryScreen';
 import GameScreen from './components/screens/GameScreen';
 import LeaderboardScreen from './components/screens/LeaderboardScreen';
-
-// Old screens - kept for reference, will be removed later
-// import RegistrationScreen from './components/screens/RegistrationScreen';
-// import LoginScreen from './components/screens/LoginScreen';
-// import HomeScreen from './components/screens/HomeScreen';
+import DashboardScreen from './components/screens/DashboardScreen';
 
 function App() {
   return (
@@ -18,6 +14,7 @@ function App() {
         <Route path="/name-entry" element={<NameEntryScreen />} />
         <Route path="/game" element={<GameScreen />} />
         <Route path="/leaderboard" element={<LeaderboardScreen />} />
+        <Route path="/dashboard" element={<DashboardScreen />} />
 
         {/* Redirects for old routes */}
         <Route path="/register" element={<Navigate to="/name-entry" replace />} />
