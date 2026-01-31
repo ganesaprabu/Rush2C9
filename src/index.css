@@ -22,3 +22,27 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Shake animation for racing cars */
+@keyframes shake {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(-1px) translateY(-1px); }
+  50% { transform: translateX(1px) translateY(0); }
+  75% { transform: translateX(-1px) translateY(1px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s infinite;
+}
+
+/* Shake for flipped car (preserves the flip) */
+.animate-shake-flip {
+  animation: shake-flip 0.5s infinite;
+}
+
+@keyframes shake-flip {
+  0%, 100% { transform: scaleX(-1) translateX(0) translateY(0); }
+  25% { transform: scaleX(-1) translateX(-1px) translateY(-1px); }
+  50% { transform: scaleX(-1) translateX(1px) translateY(0); }
+  75% { transform: scaleX(-1) translateX(-1px) translateY(1px); }
+}

@@ -179,10 +179,11 @@ export const fetchLeaderboard = async () => {
 /**
  * Get faction war stats (LCS vs VCT)
  * Returns percentages based on lastDestination
+ * Total = sum of all playCount (total races, not just players)
  */
 export const getFactionStats = async () => {
   if (!db) {
-    return { lcs: 50, vct: 50, total: 0 };
+    return { lcs: 50, vct: 50, totalRaces: 0, totalPlayers: 0 };
   }
 
   try {
@@ -194,28 +195,33 @@ export const getFactionStats = async () => {
       const playersRef = collection(db, COLLECTION_NAME);
       const snapshot = await getDocs(playersRef);
 
-      let lcsCount = 0;
-      let vctCount = 0;
+      let lcsPlays = 0;
+      let vctPlays = 0;
+      let totalRaces = 0;
 
       snapshot.docs.forEach(doc => {
         const data = doc.data();
+        const plays = data.playCount || 1;
+        totalRaces += plays;
+
         if (data.lastDestination === 'lcs') {
-          lcsCount++;
+          lcsPlays += plays;
         } else if (data.lastDestination === 'vct') {
-          vctCount++;
+          vctPlays += plays;
         }
       });
 
-      const total = lcsCount + vctCount;
+      const totalPlayers = snapshot.docs.length;
 
-      if (total === 0) {
-        return { lcs: 50, vct: 50, total: 0 };
+      if (totalRaces === 0) {
+        return { lcs: 50, vct: 50, totalRaces: 0, totalPlayers: 0 };
       }
 
       return {
-        lcs: Math.round((lcsCount / total) * 100),
-        vct: Math.round((vctCount / total) * 100),
-        total
+        lcs: Math.round((lcsPlays / totalRaces) * 100),
+        vct: Math.round((vctPlays / totalRaces) * 100),
+        totalRaces,
+        totalPlayers
       };
     };
 
@@ -223,7 +229,7 @@ export const getFactionStats = async () => {
 
   } catch (error) {
     console.error('Error fetching faction stats:', error);
-    return { lcs: 50, vct: 50, total: 0 };
+    return { lcs: 50, vct: 50, totalRaces: 0, totalPlayers: 0 };
   }
 };
 
