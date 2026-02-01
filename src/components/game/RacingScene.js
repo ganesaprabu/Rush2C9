@@ -204,6 +204,14 @@ class RacingScene extends Phaser.Scene {
     // Car starts stationary during countdown
     this.speed = 0;
 
+    // Report speed as 0 during countdown (fixes display showing previous segment's speed)
+    this.onStats({
+      speed: 0,
+      distance: 0,
+      totalDistance: this.segmentDistanceKm,
+      time: 0
+    });
+
     // Create countdown graphics layer (on top of everything)
     this.countdownGraphics = this.add.graphics();
     this.countdownGraphics.setDepth(200);

@@ -311,16 +311,16 @@ export const AVATAR_CATEGORIES = {
 
 export const SEGMENT_CONFIG = {
   // Distance per segment (in km) - Segment 1, 2, 3
-  distances: [5, 7, 9],
+  distances: [6, 8, 10],
 
   // Starting speed for each segment (km/h display) - Segment 1, 2, 3
-  startSpeed: [175, 200, 225],
+  startSpeed: [200, 225, 250],
 
   // Speed increases by this amount every 1 km traveled
   speedIncreasePerKm: 5,
 
   // Maximum speed cap (km/h)
-  maxSpeed: 250,
+  maxSpeed: 300,
 
   // Vehicle for each segment
   vehicles: ['car', 'truck', 'sports_car'],
@@ -349,8 +349,8 @@ export const BOOST_CONFIG = {
 };
 
 export const COLLISION_CONFIG = {
-  // Speed reduction on collision (percentage, 0.5 = 50% slowdown)
-  speedReduction: 0.5,
+  // Speed reduction on collision (percentage, 0.7 = 30% slowdown)
+  speedReduction: 0.7,
 
   // How long the slowdown lasts (seconds)
   slowdownDuration: 1.5,
