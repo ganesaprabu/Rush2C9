@@ -1983,8 +1983,15 @@ class RacingScene extends Phaser.Scene {
     // Car moves left/right based on playerX, road stays stable
     // playerX ranges from -3.0 to 3.0, map to screen position
     const steerOffset = this.playerX * (this.width * 0.12); // Car moves up to ~36% of screen width
-    const playerScreenX = this.width / 2 + steerOffset;
-    const playerScreenY = this.height - 140;  // Higher up to avoid control buttons
+    let playerScreenX = this.width / 2 + steerOffset;
+    let playerScreenY = this.height - 140;  // Higher up to avoid control buttons
+
+    // Add shake effect during countdown (engines revving!)
+    if (this.countdownActive) {
+      const shakeIntensity = 1.5;
+      playerScreenX += (Math.random() - 0.5) * shakeIntensity * 2;
+      playerScreenY += (Math.random() - 0.5) * shakeIntensity * 2;
+    }
 
     // Get vehicle type based on segment
     const segmentVehicle = SEGMENT_CONFIG.vehicles[this.segmentIndex] || 'car';
