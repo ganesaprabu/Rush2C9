@@ -9,10 +9,10 @@ function SplashScreen() {
     // Fade in after image loads
     setTimeout(() => setLoaded(true), 100);
 
-    // Auto-navigate after 3 seconds
+    // Auto-navigate after 4 seconds
     const timer = setTimeout(() => {
       navigate('/name-entry');
-    }, 3000);
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, [navigate]);
@@ -38,7 +38,7 @@ function SplashScreen() {
             }}
           />
         </div>
-        <p className="mt-3 text-sm text-gray-400" style={{ animation: 'pulse 2s infinite' }}>
+        <p className="mt-3 text-base font-semibold text-gray-300" style={{ animation: 'pulse 2s infinite' }}>
           Loading...
         </p>
       </div>
