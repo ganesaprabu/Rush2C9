@@ -44,13 +44,13 @@ function DashboardScreen() {
     document.title = 'Rush2C9 - Live Dashboard';
   }, []);
 
-  // Initial fetch and auto-refresh every 20 seconds
+  // Initial fetch and auto-refresh every 2 seconds (for video recording)
   useEffect(() => {
     fetchData();
 
     const interval = setInterval(() => {
       fetchData();
-    }, 20000); // 20 seconds
+    }, 2000); // 2 seconds (temporary for video)
 
     return () => clearInterval(interval);
   }, []);
@@ -195,7 +195,7 @@ function DashboardScreen() {
 
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
-              Auto-refreshes every 20 seconds • Last updated: {lastUpdated.toLocaleTimeString()}
+              Auto-refreshes every 2 seconds • Last updated: {lastUpdated.toLocaleTimeString()}
             </p>
           </div>
         </div>
