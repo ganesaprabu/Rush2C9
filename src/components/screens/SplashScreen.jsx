@@ -1,39 +1,61 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function SplashScreen() {
   const navigate = useNavigate();
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Auto-navigate to name entry after 2 seconds
+    // Fade in after image loads
+    setTimeout(() => setLoaded(true), 100);
+
+    // Auto-navigate after 3 seconds
     const timer = setTimeout(() => {
       navigate('/name-entry');
-    }, 2000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#0a0a0a] to-[#1a1a2e] text-white">
-      <div className="text-center">
-        {/* Logo/Title */}
-        <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-          Rush2C9
-        </h1>
-        <p className="text-xl text-gray-400 mb-8">Race to the Arena. Support Your Team.</p>
+    <div className="min-h-screen w-full relative overflow-hidden bg-[#0a0a0f]">
+      {/* Full screen splash image - cover on mobile, contain on desktop */}
+      <img
+        src="/splash.png"
+        alt="Rush2C9 - Race to the Arena"
+        className={`w-full h-full object-cover md:object-contain object-center absolute inset-0 transition-opacity duration-700 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
 
-        {/* Loading animation */}
-        <div className="flex justify-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+      {/* Loading indicator at bottom */}
+      <div className={`absolute bottom-16 left-0 right-0 flex flex-col items-center transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}>
+        {/* Animated loading bar */}
+        <div className="w-32 h-1 bg-gray-800/50 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full"
+            style={{
+              background: 'linear-gradient(90deg, #06b6d4, #3b82f6, #ef4444)',
+              animation: 'loadingBar 2.5s ease-in-out infinite',
+            }}
+          />
         </div>
-
-        {/* Cloud9 branding */}
-        <p className="mt-8 text-sm text-gray-500">
-          A Cloud9 x JetBrains Hackathon Game
+        <p className="mt-3 text-sm text-gray-400" style={{ animation: 'pulse 2s infinite' }}>
+          Loading...
         </p>
       </div>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes loadingBar {
+          0% { width: 0%; }
+          50% { width: 100%; }
+          100% { width: 0%; }
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }
