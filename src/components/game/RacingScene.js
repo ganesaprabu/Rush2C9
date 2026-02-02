@@ -386,8 +386,8 @@ class RacingScene extends Phaser.Scene {
     const finishZoneStart = this.trackLength * 0.85;
 
     // ========== RANDOMIZED TRAFFIC PLACEMENT ==========
-    // Alternate sides for fair zig-zag, but randomize positions within lanes
-    const totalCars = 10 + Math.floor(Math.random() * 4); // 10-13 cars (random count)
+    // Alternate sides for fair zig-zag, but randomize positions within lanes (reduced to 0.56x)
+    const totalCars = 5 + Math.floor(Math.random() * 3); // 5-7 cars (random count)
     let currentSide = Math.random() > 0.5 ? 1 : -1; // Random starting side
 
     for (let i = 0; i < totalCars; i++) {
@@ -448,8 +448,8 @@ class RacingScene extends Phaser.Scene {
     const finishZoneStart = this.trackLength * 0.95;
 
     // ========== RANDOMIZED OBSTACLE PLACEMENT ==========
-    // Random count that increases with segment difficulty
-    const baseObstacles = 10 + this.segmentIndex * 2; // 10, 12, 14 base
+    // Random count that increases with segment difficulty (reduced to 0.56x)
+    const baseObstacles = Math.floor((10 + this.segmentIndex * 2) * 0.56); // 5, 6, 7 base
     const totalObstacles = baseObstacles + Math.floor(Math.random() * 3); // +0-2 random
 
     // Random starting side
@@ -628,9 +628,9 @@ class RacingScene extends Phaser.Scene {
       if (this.hitTimer <= 0) this.isHit = false;
     }
 
-    // Off-road slowdown
-    if (Math.abs(this.playerX) > 1) {
-      targetSpeed *= 0.5;
+    // Off-road slowdown - 20% penalty at extreme edges
+    if (Math.abs(this.playerX) > 2.0) {
+      targetSpeed *= 0.8;
     }
 
     // Accelerate/decelerate
@@ -649,7 +649,7 @@ class RacingScene extends Phaser.Scene {
     // Steering - playerX ranges from -3.0 to 3.0 (3x range for much more movement)
     // Minimum speed factor ensures steering works even at low speeds (mobile fix)
     const speedPct = Math.max(0.5, this.speed / this.maxSpeed);
-    this.playerX += this.steerDirection * 10.0 * dt * speedPct; // Increased from 8.0 to 10.0
+    this.playerX += this.steerDirection * 5.0 * dt * speedPct; // Gentle sensitivity
 
     // Clamp to road bounds - allow car to move much further left/right
     this.playerX = Phaser.Math.Clamp(this.playerX, -3.0, 3.0);

@@ -222,7 +222,7 @@ export const VEHICLES = {
     cost: 60,
     description: 'Tough on rough terrain',
     speedOnRoad: {
-      highway: 0.8,  // SLOW - Heavy vehicle
+      highway: 1.0,  // NORMAL - Same as selected speed
       tar: 0.9,      // GOOD - Works fine
       mud: 1.0,      // GOOD - Handles well
       bumpy: 1.2     // GOOD - Built for this!
@@ -238,8 +238,8 @@ export const VEHICLES = {
     cost: 100,
     description: 'Speed demon on smooth roads',
     speedOnRoad: {
-      highway: 1.5,  // BEST - Born for speed
-      tar: 1.2,      // GOOD - Still fast
+      highway: 1.0,  // NORMAL - Exact selected speed
+      tar: 1.0,      // NORMAL - Exact selected speed
       mud: 0.3,      // BAD - Terrible grip
       bumpy: 0.4     // BAD - Too low clearance
     },
@@ -314,7 +314,7 @@ export const SEGMENT_CONFIG = {
   distances: [5, 7, 9],
 
   // Starting speed for each segment (km/h display) - Segment 1, 2, 3
-  startSpeed: [200, 225, 250],
+  startSpeed: [150, 160, 200],
 
   // Speed increases by this amount every 1 km traveled
   speedIncreasePerKm: 5,
@@ -343,18 +343,18 @@ export const SEGMENT_CONFIG = {
 export const PITSTOP_OPTIONS = {
   // After Segment 1: 6 choices (Truck×3 + RaceCar×3)
   afterSegment1: [
-    { id: 'truck-200', vehicle: 'truck', speed: 200, emoji: '🚛', label: 'Truck', sublabel: '200 km/h' },
-    { id: 'truck-225', vehicle: 'truck', speed: 225, emoji: '🚛', label: 'Truck', sublabel: '225 km/h' },
-    { id: 'truck-250', vehicle: 'truck', speed: 250, emoji: '🚛', label: 'Truck', sublabel: '250 km/h' },
-    { id: 'racecar-225', vehicle: 'sports_car', speed: 225, emoji: '🏎️', label: 'Race Car', sublabel: '225 km/h' },
-    { id: 'racecar-250', vehicle: 'sports_car', speed: 250, emoji: '🏎️', label: 'Race Car', sublabel: '250 km/h' },
-    { id: 'racecar-275', vehicle: 'sports_car', speed: 275, emoji: '🏎️', label: 'Race Car', sublabel: '275 km/h' },
+    { id: 'truck-160', vehicle: 'truck', speed: 160, emoji: '🚛', label: 'Truck', sublabel: '160 km/h' },
+    { id: 'truck-170', vehicle: 'truck', speed: 170, emoji: '🚛', label: 'Truck', sublabel: '170 km/h' },
+    { id: 'truck-180', vehicle: 'truck', speed: 180, emoji: '🚛', label: 'Truck', sublabel: '180 km/h' },
+    { id: 'racecar-160', vehicle: 'sports_car', speed: 160, emoji: '🏎️', label: 'Race Car', sublabel: '160 km/h' },
+    { id: 'racecar-170', vehicle: 'sports_car', speed: 170, emoji: '🏎️', label: 'Race Car', sublabel: '170 km/h' },
+    { id: 'racecar-180', vehicle: 'sports_car', speed: 180, emoji: '🏎️', label: 'Race Car', sublabel: '180 km/h' },
   ],
   // After Segment 2: 3 choices (RaceCar only)
   afterSegment2: [
-    { id: 'racecar-225', vehicle: 'sports_car', speed: 225, emoji: '🏎️', label: 'Race Car', sublabel: '225 km/h' },
+    { id: 'racecar-200', vehicle: 'sports_car', speed: 200, emoji: '🏎️', label: 'Race Car', sublabel: '200 km/h' },
+    { id: 'racecar-220', vehicle: 'sports_car', speed: 220, emoji: '🏎️', label: 'Race Car', sublabel: '220 km/h' },
     { id: 'racecar-250', vehicle: 'sports_car', speed: 250, emoji: '🏎️', label: 'Race Car', sublabel: '250 km/h' },
-    { id: 'racecar-275', vehicle: 'sports_car', speed: 275, emoji: '🏎️', label: 'Race Car', sublabel: '275 km/h' },
   ],
 };
 
@@ -371,11 +371,11 @@ export const BOOST_CONFIG = {
 };
 
 export const COLLISION_CONFIG = {
-  // Speed reduction on collision (percentage, 0.7 = 30% slowdown)
-  speedReduction: 0.7,
+  // Speed reduction on collision (percentage, 0.8 = 20% slowdown)
+  speedReduction: 0.8,
 
   // How long the slowdown lasts (seconds)
-  slowdownDuration: 1.5,
+  slowdownDuration: 1.0,
 };
 
 // ============================================================================
