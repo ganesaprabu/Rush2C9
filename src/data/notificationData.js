@@ -1,8 +1,9 @@
 // Rush2C9 Notification System
 // Sky clouds (branding messages) and Billboards (tips/announcements) - for later
 
-// Import gantry sign config from JSON (organizer-editable)
+// Import configs from JSON (organizer-editable)
 import gantryConfig from './gantryConfig.json';
+import cloudConfig from './cloudConfig.json';
 
 // ============================================================================
 // NOTIFICATION CONFIGURATION
@@ -38,48 +39,32 @@ export const NOTIFICATION_CONFIG = {
 };
 
 // ============================================================================
-// CLOUD MESSAGES - Simple branding text displayed inside clouds
+// CLOUD MESSAGES - Loaded from cloudConfig.json
 // ============================================================================
-// Short, impactful messages that fit inside a cloud shape
+// To edit messages: modify src/data/cloudConfig.json
+// Simple format: { "messages": ["Message 1", "Message 2", ...] }
 
-// Bucket 0: Theme name - highest priority (shown every 3rd cloud)
-export const CLOUD_MESSAGES_THEME = [
-  "Sky's the Limit",
-  "#SkysTheLimit",
-];
+export const CLOUD_MESSAGES = cloudConfig.messages;
 
-// Bucket 1: Event & Branding (70% of remaining)
-export const CLOUD_MESSAGES_BRANDING = [
-  "JetBrains",
-  "Cloud9",
-  "☁️ C9",
-  "Rush2C9",
-  "LCS 2026",
-  "VCT Arena",
-  "Go Cloud9!",
-  "Code Smart",
-  "Race On!",
-];
+// SIMPLE GLOBAL QUEUE for clouds - shuffle once, iterate through
+// Guarantees ALL 22 messages appear before any repeat
+let cloudQueue = [];
+let cloudQueuePosition = 0;
 
-// Bucket 2: JetBrains IDEs (30% of remaining)
-export const CLOUD_MESSAGES_IDES = [
-  "IntelliJ IDEA",
-  "PyCharm",
-  "WebStorm",
-  "PhpStorm",
-  "GoLand",
-  "CLion",
-  "Rider",
-  "DataGrip",
-  "Fleet",
-  "RustRover",
-  "Aqua",
-];
+// Initialize cloud queue with shuffled messages
+const initCloudQueue = () => {
+  const indices = Array.from({ length: CLOUD_MESSAGES.length }, (_, i) => i);
+  // Fisher-Yates shuffle
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  cloudQueue = indices;
+  cloudQueuePosition = 0;
+};
 
-// Track recently shown messages to avoid repeats
-let recentMessages = [];
-let cloudCounter = 0;
-const MAX_RECENT = 5; // Don't repeat last 5 messages
+// Initialize on module load
+initCloudQueue();
 
 // ============================================================================
 // JETBRAINS TIPS - For billboards (later)
@@ -175,39 +160,20 @@ export const getGantrySignContent = () => {
 // ============================================================================
 
 /**
- * Get a random cloud message with no repeats
- * - Every 3rd cloud shows "Sky's the Limit" theme
- * - Other clouds: 70% branding, 30% IDEs
+ * Get next cloud message from queue - PURE GLOBAL RANDOM
+ * Guarantees ALL 22 messages appear before any repeat
  */
 export const getRandomCloudMessage = () => {
-  cloudCounter++;
+  // Get next message from shuffled queue
+  const messageIndex = cloudQueue[cloudQueuePosition];
+  const message = CLOUD_MESSAGES[messageIndex];
 
-  let sourceArray;
+  // Move to next position
+  cloudQueuePosition++;
 
-  // Every 3rd cloud shows the theme name
-  if (cloudCounter % 3 === 1) {
-    sourceArray = CLOUD_MESSAGES_THEME;
-  } else {
-    // 70% branding, 30% IDEs for other clouds
-    sourceArray = Math.random() < 0.7
-      ? CLOUD_MESSAGES_BRANDING
-      : CLOUD_MESSAGES_IDES;
-  }
-
-  // Filter out recently shown messages
-  const available = sourceArray.filter(msg => !recentMessages.includes(msg));
-
-  // If all messages were recently shown, reset and use full array
-  const finalArray = available.length > 0 ? available : sourceArray;
-
-  // Pick random message
-  const index = Math.floor(Math.random() * finalArray.length);
-  const message = finalArray[index];
-
-  // Track this message to avoid repeats
-  recentMessages.push(message);
-  if (recentMessages.length > MAX_RECENT) {
-    recentMessages.shift(); // Remove oldest
+  // Reshuffle when we've used all messages
+  if (cloudQueuePosition >= cloudQueue.length) {
+    initCloudQueue();
   }
 
   return message;
