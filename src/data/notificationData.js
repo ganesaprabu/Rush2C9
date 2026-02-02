@@ -111,39 +111,63 @@ export const ORGANIZER_ANNOUNCEMENTS = [
 // GANTRY SIGN MESSAGES - Loaded from gantryConfig.json
 // ============================================================================
 // To edit messages: modify src/data/gantryConfig.json
-// Future: Organizer portal will update this JSON via API
-//
-// Destination signs (blue) - show 2 locations with arrows
-// Message signs (green) - event/sponsor messages (MAX 25 chars for readability)
+// Simple format: { "signs": [{ "top": "...", "bottom": "..." }, ...] }
 
-export const GANTRY_DESTINATIONS = gantryConfig.destinations;
-export const GANTRY_EVENT_MESSAGES = gantryConfig.messages;
+export const GANTRY_SIGNS = gantryConfig.signs;
 
-// Get gantry sign content for a specific position
-// Returns { type: 'destination' | 'event', content: {...} }
-export const getGantrySignContent = (signIndex, totalDistance, remainingKm) => {
-  // Alternate between destination signs and event messages
-  // First sign = destination, second = event, third = destination, etc.
-  if (signIndex % 2 === 0) {
-    // Destination sign - shows 2 locations with arrows
-    const destIndex = Math.floor(signIndex / 2) % GANTRY_DESTINATIONS.length;
-    const dest = GANTRY_DESTINATIONS[destIndex];
-    return {
-      type: 'destination',
-      primary: dest.primary,
-      secondary: dest.secondary,
-      secondaryDir: dest.secondaryDir,
-    };
-  } else {
-    // Event message (green sign)
-    const eventIndex = Math.floor(signIndex / 2) % GANTRY_EVENT_MESSAGES.length;
-    const event = GANTRY_EVENT_MESSAGES[eventIndex];
-    return {
-      type: 'event',
-      text: event.text,
-      messageType: event.type,
-    };
+// Shuffle array using Fisher-Yates algorithm
+const shuffleArray = (array) => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
+  return shuffled;
+};
+
+// SIMPLE GLOBAL QUEUE - shuffle once, iterate through
+// Guarantees ALL 30 signs appear before any repeat
+let signQueue = [];
+let queuePosition = 0;
+
+// Initialize queue with shuffled signs
+const initQueue = () => {
+  const indices = Array.from({ length: GANTRY_SIGNS.length }, (_, i) => i);
+  // Fisher-Yates shuffle
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  signQueue = indices;
+  queuePosition = 0;
+};
+
+// Initialize on module load
+initQueue();
+
+// No-op - kept for compatibility
+export const reshuffleGantrySigns = () => {};
+
+// Get next sign from queue - GUARANTEED unique until all 30 used
+export const getGantrySignContent = () => {
+  // Get next sign from shuffled queue
+  const signIndex = signQueue[queuePosition];
+  const sign = GANTRY_SIGNS[signIndex];
+
+  // Move to next position
+  queuePosition++;
+
+  // Reshuffle when we've used all signs
+  if (queuePosition >= signQueue.length) {
+    initQueue();
+  }
+
+  return {
+    type: 'destination',
+    primary: sign.top,
+    secondary: sign.bottom,
+    secondaryDir: Math.random() < 0.5 ? 'left' : 'right',
+  };
 };
 
 // ============================================================================

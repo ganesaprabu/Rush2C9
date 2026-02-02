@@ -11,7 +11,8 @@ import {
   getRandomCloudMessage,
   getRandomTip,
   getRandomAnnouncement,
-  getGantrySignContent
+  getGantrySignContent,
+  reshuffleGantrySigns
 } from '../../data/notificationData';
 
 /**
@@ -496,6 +497,9 @@ class RacingScene extends Phaser.Scene {
 
     if (!NOTIFICATION_CONFIG.gantry.enabled) return;
 
+    // Reshuffle signs for random order each segment
+    reshuffleGantrySigns();
+
     const numSigns = NOTIFICATION_CONFIG.gantry.signsPerSegment; // 3 signs per segment
 
     // Spread signs evenly from 15% to 85% of track
@@ -511,8 +515,8 @@ class RacingScene extends Phaser.Scene {
       const progressAtSign = z / this.trackLength;
       const remainingKm = this.segmentDistanceKm * (1 - progressAtSign);
 
-      // Get sign content (alternates between destination and event)
-      const content = getGantrySignContent(i, this.segmentDistanceKm, remainingKm);
+      // Get sign content from shuffled array
+      const content = getGantrySignContent(i);
 
       this.gantrySigns.push({
         z: z,
