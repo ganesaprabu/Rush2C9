@@ -35,6 +35,7 @@ class RacingScene extends Phaser.Scene {
     this.roadType = config.roadType || 'highway';
     this.credits = config.credits || 200;
     this.segmentIndex = config.segmentIndex || 0; // 0-based segment index (0, 1, 2)
+    this.startSpeedOverride = config.startSpeed || null; // Speed chosen at pit stop (null = use default)
   }
 
   create() {
@@ -129,7 +130,8 @@ class RacingScene extends Phaser.Scene {
     this.segmentDistanceKm = SEGMENT_CONFIG.distances[segIdx];
 
     // Base display speed for this segment (km/h)
-    this.baseDisplaySpeed = SEGMENT_CONFIG.startSpeed[segIdx];
+    // Use pit stop selection if provided, otherwise use default from config
+    this.baseDisplaySpeed = this.startSpeedOverride || SEGMENT_CONFIG.startSpeed[segIdx];
 
     // Current display speed (increases per km traveled)
     this.currentDisplaySpeed = this.baseDisplaySpeed;

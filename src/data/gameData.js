@@ -336,6 +336,28 @@ export const SEGMENT_CONFIG = {
   trafficSpeed: [0.3, 0.5, 0.7],
 };
 
+// ============================================================================
+// PIT STOP SPEED OPTIONS - Fan chooses speed for next segment
+// ============================================================================
+
+export const PITSTOP_OPTIONS = {
+  // After Segment 1: 6 choices (Truck×3 + RaceCar×3)
+  afterSegment1: [
+    { id: 'truck-200', vehicle: 'truck', speed: 200, emoji: '🚛', label: 'Truck', sublabel: '200 km/h' },
+    { id: 'truck-225', vehicle: 'truck', speed: 225, emoji: '🚛', label: 'Truck', sublabel: '225 km/h' },
+    { id: 'truck-250', vehicle: 'truck', speed: 250, emoji: '🚛', label: 'Truck', sublabel: '250 km/h' },
+    { id: 'racecar-225', vehicle: 'sports_car', speed: 225, emoji: '🏎️', label: 'Race Car', sublabel: '225 km/h' },
+    { id: 'racecar-250', vehicle: 'sports_car', speed: 250, emoji: '🏎️', label: 'Race Car', sublabel: '250 km/h' },
+    { id: 'racecar-275', vehicle: 'sports_car', speed: 275, emoji: '🏎️', label: 'Race Car', sublabel: '275 km/h' },
+  ],
+  // After Segment 2: 3 choices (RaceCar only)
+  afterSegment2: [
+    { id: 'racecar-225', vehicle: 'sports_car', speed: 225, emoji: '🏎️', label: 'Race Car', sublabel: '225 km/h' },
+    { id: 'racecar-250', vehicle: 'sports_car', speed: 250, emoji: '🏎️', label: 'Race Car', sublabel: '250 km/h' },
+    { id: 'racecar-275', vehicle: 'sports_car', speed: 275, emoji: '🏎️', label: 'Race Car', sublabel: '275 km/h' },
+  ],
+};
+
 export const BOOST_CONFIG = {
   // Boost multiplier (1.5 = 50% speed increase)
   // This affects BOTH actual speed and display speed

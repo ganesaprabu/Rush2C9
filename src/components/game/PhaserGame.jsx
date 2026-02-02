@@ -24,6 +24,7 @@ const PhaserGame = forwardRef(function PhaserGame({
   roadType = 'highway',
   credits = 200,
   segmentIndex = 0,
+  startSpeed = null,
   playerName = 'RACER',
   onProgress,
   onStats,
@@ -53,6 +54,7 @@ const PhaserGame = forwardRef(function PhaserGame({
       roadType,
       credits,
       segmentIndex,
+      startSpeed,
       // Callbacks
       onProgress: (progress) => callbacksRef.current.onProgress?.(progress),
       onStats: (stats) => callbacksRef.current.onStats?.(stats),
@@ -107,7 +109,7 @@ const PhaserGame = forwardRef(function PhaserGame({
         gameRef.current = null;
       }
     };
-  }, [segmentIndex, vehicleId, roadType, credits]); // Recreate game when segment or config changes
+  }, [segmentIndex, vehicleId, roadType, credits, startSpeed]); // Recreate game when segment or config changes
 
   // Update vehicle when it changes
   useEffect(() => {

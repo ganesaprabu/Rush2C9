@@ -7,6 +7,7 @@ import {
   ROAD_TYPES,
   GAME_CONFIG,
   SEGMENT_CONFIG,
+  PITSTOP_OPTIONS,
   getRandomStartingCity,
   generateRouteSegments,
   getSpeedRating
@@ -50,6 +51,7 @@ function GameScreen() {
   const [credits, setCredits] = useState(GAME_CONFIG.startingCredits);
   const [currentSegment, setCurrentSegment] = useState(0);
   const [currentVehicle, setCurrentVehicle] = useState('car'); // Default vehicle
+  const [selectedSpeed, setSelectedSpeed] = useState(null); // Speed chosen at pit stop for next segment
   const [segmentResults, setSegmentResults] = useState([]); // {time, obstaclesHit, boostsUsed, boostsAvailable}
   const [totalTime, setTotalTime] = useState(0);
   const [totalBoostsUsed, setTotalBoostsUsed] = useState(0);
@@ -77,7 +79,9 @@ function GameScreen() {
   // ===== EVENT HANDLERS (defined before effects that use them) =====
 
   // Continue to next racing segment (Segment 2 - Truck)
-  const handleContinueRacing = useCallback(() => {
+  const handleContinueRacing = useCallback((speed, vehicle) => {
+    setSelectedSpeed(speed);
+    setCurrentVehicle(vehicle);
     setCurrentSegment((prev) => prev + 1);
     setProgress(0);
     setElapsedTime(0);
@@ -532,6 +536,7 @@ function GameScreen() {
             roadType={segment?.roadType || 'highway'}
             credits={credits}
             segmentIndex={currentSegment}
+            startSpeed={selectedSpeed}
             playerName={localStorage.getItem('rush2c9_playerName') || 'RACER'}
             onProgress={handleProgress}
             onStats={handleStats}
@@ -675,100 +680,90 @@ function GameScreen() {
           <div className="mb-6">
             <p className="text-center font-semibold mb-4 text-lg">Choose Your Path</p>
 
-            {/* After Segment 1: Show Segment 2 and Skip to Segment 3 */}
+            {/* After Segment 1: Show 6 speed options (3 Truck + 3 Race Car) */}
             {currentSegment === 0 && (
               <>
-                {/* Option 1: Continue to Segment 2 (Truck) - FREE */}
-                <button
-                  onClick={handleContinueRacing}
-                  className="w-full mb-6 p-4 bg-gradient-to-r from-blue-900/50 to-blue-800/50 hover:from-blue-800/50 hover:to-blue-700/50 rounded-xl border border-blue-600/50 transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">🚛</span>
-                      <div className="text-left">
-                        <p className="font-bold">Segment 2 - Truck</p>
-                        <p className="text-sm text-gray-400">200 km/h</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-400 font-bold text-lg">FREE</span>
-                      <span className="text-green-400 text-xl">→</span>
-                    </div>
+                {/* TRUCK Section */}
+                <div className="mb-4">
+                  <p className="text-orange-400 font-semibold mb-2 flex items-center gap-2">
+                    <span className="text-xl">🚛</span> TRUCK <span className="text-gray-500 text-sm font-normal">(Pick ONE)</span>
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {PITSTOP_OPTIONS.afterSegment1.filter(o => o.vehicle === 'truck').map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => handleContinueRacing(option.speed, option.vehicle)}
+                        className="p-3 bg-gradient-to-b from-orange-800/60 to-orange-900/60 hover:from-orange-700/70 hover:to-orange-800/70 rounded-lg border border-orange-600/50 transition-all hover:scale-[1.03] active:scale-[0.97]"
+                      >
+                        <p className="text-xl font-bold text-white">{option.speed}</p>
+                        <p className="text-xs text-orange-300">km/h</p>
+                      </button>
+                    ))}
                   </div>
-                </button>
+                </div>
 
-                {/* Option 2: Skip to Segment 3 (Race Car) - 100 credits */}
-                <button
-                  onClick={handleSkipToSegment3}
-                  disabled={credits < GAME_CONFIG.skipSegmentCost}
-                  className={`w-full p-4 rounded-xl border transition-all ${
-                    credits >= GAME_CONFIG.skipSegmentCost
-                      ? 'bg-gradient-to-r from-purple-900/50 to-pink-900/50 hover:from-purple-800/50 hover:to-pink-800/50 border-purple-600/50 hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle'
-                      : 'bg-gray-900/50 border-gray-700/50 opacity-50 cursor-not-allowed'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">🏎️</span>
-                      <div className="text-left">
-                        <p className="font-bold">Skip to Segment 3 - Race Car</p>
-                        <p className="text-sm text-gray-400">225 km/h</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`font-bold text-lg ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>
-                        -{GAME_CONFIG.skipSegmentCost} 💳
-                      </span>
-                      <span className={`text-xl ${credits >= GAME_CONFIG.skipSegmentCost ? 'text-yellow-400' : 'text-gray-500'}`}>→</span>
-                    </div>
+                {/* RACE CAR Section */}
+                <div className="mb-4">
+                  <p className="text-cyan-400 font-semibold mb-2 flex items-center gap-2">
+                    <span className="text-xl">🏎️</span> RACE CAR <span className="text-gray-500 text-sm font-normal">(Pick ONE)</span>
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {PITSTOP_OPTIONS.afterSegment1.filter(o => o.vehicle === 'sports_car').map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => handleContinueRacing(option.speed, option.vehicle)}
+                        className="p-3 bg-gradient-to-b from-cyan-800/60 to-blue-900/60 hover:from-cyan-700/70 hover:to-blue-800/70 rounded-lg border border-cyan-600/50 transition-all hover:scale-[1.03] active:scale-[0.97]"
+                      >
+                        <p className="text-xl font-bold text-white">{option.speed}</p>
+                        <p className="text-xs text-cyan-300">km/h</p>
+                      </button>
+                    ))}
                   </div>
-                  {credits < GAME_CONFIG.skipSegmentCost && (
-                    <p className="text-xs text-red-400 mt-2 text-center">Not enough credits</p>
-                  )}
+                </div>
+
+                {/* End Game option */}
+                <button
+                  onClick={() => setGameState('results')}
+                  className="w-full p-3 bg-gradient-to-r from-gray-800/50 to-gray-700/50 hover:from-gray-700/50 hover:to-gray-600/50 rounded-xl border border-gray-600/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-xl">🏁</span>
+                    <span className="font-medium text-gray-300">End Game & View Results</span>
+                  </div>
                 </button>
               </>
             )}
 
-            {/* After Segment 2: Show Segment 3 and End Game */}
+            {/* After Segment 2: Show 3 speed options (Race Car only) */}
             {currentSegment === 1 && (
               <>
-                {/* Option 1: Continue to Segment 3 (Race Car) - FREE */}
-                <button
-                  onClick={handleContinueRacing}
-                  className="w-full mb-6 p-4 bg-gradient-to-r from-blue-900/50 to-blue-800/50 hover:from-blue-800/50 hover:to-blue-700/50 rounded-xl border border-blue-600/50 transition-all hover:scale-[1.02] active:scale-[0.98] animate-pulse-subtle"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">🏎️</span>
-                      <div className="text-left">
-                        <p className="font-bold">Segment 3 - Race Car</p>
-                        <p className="text-sm text-gray-400">225 km/h</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-400 font-bold text-lg">FREE</span>
-                      <span className="text-green-400 text-xl">→</span>
-                    </div>
+                {/* RACE CAR Section */}
+                <div className="mb-4">
+                  <p className="text-cyan-400 font-semibold mb-2 flex items-center gap-2">
+                    <span className="text-xl">🏎️</span> RACE CAR <span className="text-gray-500 text-sm font-normal">(Pick ONE)</span>
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {PITSTOP_OPTIONS.afterSegment2.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => handleContinueRacing(option.speed, option.vehicle)}
+                        className="p-3 bg-gradient-to-b from-cyan-800/60 to-blue-900/60 hover:from-cyan-700/70 hover:to-blue-800/70 rounded-lg border border-cyan-600/50 transition-all hover:scale-[1.03] active:scale-[0.97]"
+                      >
+                        <p className="text-xl font-bold text-white">{option.speed}</p>
+                        <p className="text-xs text-cyan-300">km/h</p>
+                      </button>
+                    ))}
                   </div>
-                </button>
+                </div>
 
-                {/* Option 2: End Game & View Results */}
+                {/* End Game option */}
                 <button
                   onClick={() => setGameState('results')}
-                  className="w-full p-4 bg-gradient-to-r from-gray-800/50 to-gray-700/50 hover:from-gray-700/50 hover:to-gray-600/50 rounded-xl border border-gray-600/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full p-3 bg-gradient-to-r from-gray-800/50 to-gray-700/50 hover:from-gray-700/50 hover:to-gray-600/50 rounded-xl border border-gray-600/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">🏁</span>
-                      <div className="text-left">
-                        <p className="font-bold">End Game</p>
-                        <p className="text-sm text-gray-400">View final results</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-300 text-xl">→</span>
-                    </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-xl">🏁</span>
+                    <span className="font-medium text-gray-300">End Game & View Results</span>
                   </div>
                 </button>
               </>
