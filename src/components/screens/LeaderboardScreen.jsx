@@ -211,13 +211,24 @@ function LeaderboardScreen() {
             {/* Header with inline search */}
             <div className="flex justify-between items-center mb-3">
               <p className="text-sm text-gray-400">All Racers</p>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearch}
-                placeholder="🔍 Search name..."
-                className="bg-gray-700 text-white text-sm px-3 py-1.5 rounded-lg w-44 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  placeholder="Search name..."
+                  className="bg-gray-700 text-white text-sm pl-3 pr-8 py-1.5 rounded-lg w-44 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                    aria-label="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Search results info */}
