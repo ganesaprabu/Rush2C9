@@ -311,7 +311,7 @@ export const AVATAR_CATEGORIES = {
 
 export const SEGMENT_CONFIG = {
   // Distance per segment (in km) - Segment 1, 2, 3
-  distances: [5, 7, 9],
+  distances: [20, 25, 30],
 
   // Starting speed for each segment (km/h display) - Segment 1, 2, 3
   startSpeed: [150, 160, 200],

@@ -79,9 +79,8 @@ class RacingScene extends Phaser.Scene {
     this.trackLength = 0;
     this.buildTrack();
 
-    // Traffic
+    // Traffic (placed later in create() after trackLength is set)
     this.cars = [];
-    this.placeCars();
 
     // State
     this.elapsedTime = 0;
@@ -128,6 +127,15 @@ class RacingScene extends Phaser.Scene {
 
     // Segment distance in km (from config)
     this.segmentDistanceKm = SEGMENT_CONFIG.distances[segIdx];
+
+    // ========== SCALE TRACK LENGTH BASED ON DISTANCE ==========
+    // Base: 10 km = 100,000 units, so 1 km = 10,000 units
+    // This makes the actual gameplay duration proportional to configured distance
+    this.trackLength = this.segmentDistanceKm * 10000;
+
+    // ========== PLACE TRAFFIC & OBSTACLES ==========
+    // Must be called AFTER trackLength is set so they spread across full track
+    this.placeCars();
 
     // Base display speed for this segment (km/h)
     // Use pit stop selection if provided, otherwise use default from config
@@ -448,8 +456,8 @@ class RacingScene extends Phaser.Scene {
     const finishZoneStart = this.trackLength * 0.95;
 
     // ========== RANDOMIZED OBSTACLE PLACEMENT ==========
-    // Random count that increases with segment difficulty (reduced to 0.56x)
-    const baseObstacles = Math.floor((10 + this.segmentIndex * 2) * 0.56); // 5, 6, 7 base
+    // Random count that increases with segment difficulty (4x original)
+    const baseObstacles = Math.floor((10 + this.segmentIndex * 2) * 2.24); // 22, 26, 31 base
     const totalObstacles = baseObstacles + Math.floor(Math.random() * 3); // +0-2 random
 
     // Random starting side
