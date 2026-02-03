@@ -137,7 +137,7 @@ The production build will be output to the `dist/` folder, ready for deployment.
 
 ## 📱 Demo
 
-[🎥 Watch Demo Video](YOUR_VIDEO_LINK_HERE)
+[🎥 Watch Demo Video](https://youtu.be/M_tM7G1xyGI)
 
 [🎮 Try Live Demo](https://rush2c9.vercel.app)
 
