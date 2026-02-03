@@ -184,7 +184,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👤 Author
 
 **GANESAPRABU NAVAMANIRAJAN**
-- Email: ganesa.tech.ai@gmail.com
+- Email: ganesa.tech@gmail.com
 
 ---
 
