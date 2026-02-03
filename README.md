@@ -90,7 +90,7 @@ Rush2C9/
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/Rush2C9.git
+git clone https://github.com/ganesaprabu/Rush2C9.git
 
 # Navigate to project
 cd Rush2C9
@@ -139,7 +139,7 @@ The production build will be output to the `dist/` folder, ready for deployment.
 
 [🎥 Watch Demo Video](YOUR_VIDEO_LINK_HERE)
 
-[🎮 Try Live Demo](YOUR_DEMO_LINK_HERE)
+[🎮 Try Live Demo](https://rush2c9.vercel.app)
 
 ---
 
